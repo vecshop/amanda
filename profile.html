@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile - HealthTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#7CB9E8" />
+    <link rel="icon" type="image/x-icon" href="/icons/logo64.ico" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="HealthTrack" />
+    <link rel="apple-touch-icon" href="/icons/logo256.ico" />
+    <style>
+      body {
+        padding-bottom: 4rem;
+      }
+      .footer-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-around;
+        padding: 0.75rem 0;
+        z-index: 100;
+      }
+      .footer-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #666666;
+        text-decoration: none;
+        font-size: 0.75rem;
+      }
+      .footer-nav-item.active {
+        color: #4a90e2;
+      }
+      .footer-nav-item i {
+        margin-bottom: 0.25rem;
+        font-size: 1.25rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+      <div class="px-4 py-3">
+        <h1 class="text-xl font-bold text-gray-900">Profil Saya</h1>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6 max-w-lg">
+      <!-- Profile Picture Section -->
+      <div class="text-center mb-8">
+        <div class="relative inline-block">
+          <img
+            id="profileImage"
+            src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg"
+            alt="Profile Picture"
+            class="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+          />
+          <button
+            id="changePhotoBtn"
+            class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 shadow-lg"
+          >
+            <i class="bi bi-camera-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Profile Form -->
+      <form id="profileForm" class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-6 space-y-4">
+          <div>
+            <label
+              for="fullName"
+              class="block text-sm font-medium text-gray-700"
+              >Nama Lengkap</label
+            >
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              disabled
+              class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label for="gender" class="block text-sm font-medium text-gray-700"
+              >Jenis Kelamin</label
+            >
+            <select
+              id="gender"
+              name="gender"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="male">Laki-laki</option>
+              <option value="female">Perempuan</option>
+              <option value="other">Lainnya</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              for="birthDate"
+              class="block text-sm font-medium text-gray-700"
+              >Tanggal Lahir</label
+            >
+            <input
+              type="date"
+              id="birthDate"
+              name="birthDate"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700"
+              >Nomor Telepon</label
+            >
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+
+      <!-- Additional Actions -->
+      <div class="mt-6 space-y-4">
+        <button
+          id="changePasswordBtn"
+          class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+        >
+          Ubah Password
+        </button>
+
+        <button
+          id="logoutBtn"
+          class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        >
+          Keluar
+        </button>
+      </div>
+
+      <!-- Error Alert -->
+      <div
+        id="errorAlert"
+        class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <span id="errorMessage" class="block sm:inline"></span>
+      </div>
+    </main>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+      <a href="index.html" class="footer-nav-item">
+        <i class="bi bi-house-fill"></i>
+        <span>Beranda</span>
+      </a>
+      <a href="statistics.html" class="footer-nav-item">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span>Statistik</span>
+      </a>
+      <a href="jurnal.html" class="footer-nav-item">
+        <i class="bi bi-journal-text"></i>
+        <span>Jurnal</span>
+      </a>
+      <a href="#" class="footer-nav-item">
+        <i class="bi bi-people-fill"></i>
+        <span>Komunitas</span>
+      </a>
+      <a href="profile.html" class="footer-nav-item active">
+        <i class="bi bi-person-fill"></i>
+        <span>Profil</span>
+      </a>
+    </nav>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registered:', registration);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+      </script>
+
+    <script type="module">
+      import { supabase, auth } from "./supabase.js";
+
+      const profileForm = document.getElementById("profileForm");
+      const errorAlert = document.getElementById("errorAlert");
+      const errorMessage = document.getElementById("errorMessage");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const changePasswordBtn = document.getElementById("changePasswordBtn");
+      const changePhotoBtn = document.getElementById("changePhotoBtn");
+
+      // Load user data when page loads
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } = await auth.getUser();
+
+          if (userError || !user) {
+            window.location.href = "login.html";
+            return;
+          }
+
+          // Get user profile data
+          const { data: profiles, error: profileError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id);
+
+          if (profileError) throw profileError;
+
+          // If user profile doesn't exist, create it
+          if (!profiles || profiles.length === 0) {
+            const { error: insertError } = await supabase.from("users").insert([
+              {
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || "",
+                gender: user.user_metadata?.gender || "",
+                birth_date: user.user_metadata?.birth_date || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+            ]);
+
+            if (insertError) throw insertError;
+
+            // Reload page to show new profile
+            window.location.reload();
+            return;
+          }
+
+          const profile = profiles[0];
+
+          // Fill form with user data
+          document.getElementById("fullName").value = profile.full_name || "";
+          document.getElementById("email").value = profile.email || "";
+          document.getElementById("gender").value = profile.gender || "";
+          document.getElementById("birthDate").value = profile.birth_date || "";
+          document.getElementById("phone").value = profile.phone || "";
+
+          if (profile.avatar_url) {
+            document.getElementById("profileImage").src = profile.avatar_url;
+          }
+        } catch (error) {
+          console.error("Error loading profile:", error);
+          showError(
+            "Gagal memuat data profil. " +
+              (error.message || "Silakan coba lagi.")
+          );
+        }
+      });
+
+      // Handle form submission
+      profileForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } = await auth.getUser();
+          if (userError) throw userError;
+
+          const updates = {
+            id: user.id,
+            full_name: document.getElementById("fullName").value,
+            gender: document.getElementById("gender").value,
+            birth_date: document.getElementById("birthDate").value,
+            phone: document.getElementById("phone").value,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error } = await supabase
+            .from("users")
+            .update(updates)
+            .eq("id", user.id);
+
+          if (error) throw error;
+
+          alert("Profil berhasil diperbarui!");
+        } catch (error) {
+          console.error("Error updating profile:", error);
+          showError("Gagal memperbarui profil");
+        }
+      });
+
+      // Handle logout
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          const { error } = await auth.signOut();
+          if (error) throw error;
+          window.location.href = "login.html";
+        } catch (error) {
+          console.error("Error signing out:", error);
+          showError("Gagal keluar dari akun");
+        }
+      });
+
+      // Handle change password
+      changePasswordBtn.addEventListener("click", async () => {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          const { error } = await supabase.auth.resetPasswordForEmail(
+            user.email
+          );
+          if (error) throw error;
+          alert("Email reset password telah dikirim ke alamat email Anda");
+        } catch (error) {
+          console.error("Error requesting password reset:", error);
+          showError("Gagal mengirim reset password");
+        }
+      });
+
+      // Handle profile picture change
+      changePhotoBtn.addEventListener("click", async () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = async () => {
+          try {
+            const file = input.files[0];
+            const fileExt = file.name.split(".").pop();
+            const fileName = `${Math.random()
+              .toString(36)
+              .substring(2)}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            // Upload file to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+              .from("profiles")
+              .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from("profiles").getPublicUrl(filePath);
+
+            // Update user profile
+            const {
+              data: { user },
+            } = await auth.getUser();
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ avatar_url: publicUrl })
+              .eq("id", user.id);
+
+            if (updateError) throw updateError;
+
+            // Update UI
+            document.getElementById("profileImage").src = publicUrl;
+            alert("Foto profil berhasil diperbarui!");
+          } catch (error) {
+            console.error("Error updating profile picture:", error);
+            showError("Gagal mengubah foto profil");
+          }
+        };
+
+        input.click();
+      });
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorAlert.classList.remove("hidden");
+        setTimeout(() => {
+          errorAlert.classList.add("hidden");
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

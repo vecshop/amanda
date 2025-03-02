@@ -1,0 +1,27 @@
+{
+    "name": "HealthTrack",
+    "short_name": "HealthTrack",
+    "description": "Pemantau Kesehatan dan Aktivitas Personal",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#7CB9E8",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "icons/logo64.ico",
+        "sizes": "64x64",
+        "type": "image/x-icon"
+      },
+      {
+        "src": "icons/logo128.ico",
+        "sizes": "128x128",
+        "type": "image/x-icon"
+      },
+      {
+        "src": "icons/logo256.ico",
+        "sizes": "256x256",
+        "type": "image/x-icon"
+      }
+    ]
+  }

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - HealthTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#7CB9E8">
+<link rel="icon" type="image/x-icon" href="/icons/logo64.ico">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="HealthTrack">
+<link rel="apple-touch-icon" href="/icons/logo256.ico">
+  </head>
+  <body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center px-4">
+      <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+        <!-- Logo -->
+        <div class="text-center">
+          <img
+            src="https://www.freeiconspng.com/thumbs/medical-icon-png/health-insurance-icon-png-3.png"
+            alt="HealthTrack Logo"
+            class="mx-auto h-12 w-auto"
+          />
+          <h2 class="mt-6 text-3xl font-bold text-gray-900">HealthTrack</h2>
+          <p class="mt-2 text-sm text-gray-600">
+            Daftar untuk memulai perjalanan sehatmu
+          </p>
+        </div>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" class="mt-8 space-y-6">
+          <div class="rounded-md shadow-sm space-y-4">
+            <div>
+              <label
+                for="fullName"
+                class="block text-sm font-medium text-gray-700"
+                >Nama Lengkap</label
+              >
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm"
+              />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700"
+                >Email</label
+              >
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm"
+              />
+            </div>
+            <div>
+              <label
+                for="password"
+                class="block text-sm font-medium text-gray-700"
+                >Password</label
+              >
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm"
+              />
+            </div>
+            <div>
+              <label
+                for="gender"
+                class="block text-sm font-medium text-gray-700"
+                >Jenis Kelamin</label
+              >
+              <select
+                id="gender"
+                name="gender"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm"
+              >
+                <option value="">Pilih jenis kelamin</option>
+                <option value="male">Laki-laki</option>
+                <option value="female">Perempuan</option>
+                <option value="other">Lainnya</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="birthDate"
+                class="block text-sm font-medium text-gray-700"
+                >Tanggal Lahir</label
+              >
+              <input
+                id="birthDate"
+                name="birthDate"
+                type="date"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Daftar
+            </button>
+          </div>
+        </form>
+
+        <!-- Sign In Link -->
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            Sudah punya akun?
+            <a
+              href="login.html"
+              class="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Masuk disini
+            </a>
+          </p>
+        </div>
+
+        <!-- Error Alert -->
+        <div
+          id="errorAlert"
+          class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
+          <span id="errorMessage" class="block sm:inline"></span>
+        </div>
+      </div>
+    </div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registered:', registration);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+      </script>
+    <script type="module">
+      import { supabase, auth } from "./supabase.js";
+
+      const signupForm = document.getElementById("signupForm");
+      const errorAlert = document.getElementById("errorAlert");
+      const errorMessage = document.getElementById("errorMessage");
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorAlert.classList.remove("hidden");
+      }
+
+      function validateInput(fullName, email, password, gender, birthDate) {
+        if (!fullName || !email || !password || !gender || !birthDate) {
+          throw new Error("Semua field harus diisi");
+        }
+
+        if (password.length < 6) {
+          throw new Error("Password harus minimal 6 karakter");
+        }
+
+        if (!email.includes("@")) {
+          throw new Error("Format email tidak valid");
+        }
+
+        const birthDateObj = new Date(birthDate);
+        const today = new Date();
+        if (birthDateObj > today) {
+          throw new Error("Tanggal lahir tidak valid");
+        }
+      }
+
+      // Cari bagian script untuk event listener form signup dan ganti dengan kode berikut
+
+      signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorAlert.classList.add("hidden");
+
+        const fullName = document.getElementById("fullName").value.trim();
+        const email = document
+          .getElementById("email")
+          .value.trim()
+          .toLowerCase();
+        const password = document.getElementById("password").value;
+        const gender = document.getElementById("gender").value;
+        const birthDate = document.getElementById("birthDate").value;
+
+        try {
+          validateInput(fullName, email, password, gender, birthDate);
+
+          const submitButton = signupForm.querySelector(
+            'button[type="submit"]'
+          );
+          submitButton.disabled = true;
+          submitButton.textContent = "Mendaftar...";
+
+          alert(
+            "Pendaftaran berhasil! Silakan cek email Anda untuk konfirmasi. Email mungkin masuk ke folder spam."
+          );
+
+          // Step 1: Sign up with Supabase Auth
+          const { data: authData, error: authError } = await auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName,
+                gender,
+                birth_date: birthDate,
+              },
+              emailRedirectTo: `${window.location.origin}/login.html`,
+            },
+          });
+
+          if (authError) throw authError;
+
+          if (authData?.user) {
+            // Step 2: Insert user data into users table
+            const { error: profileError } = await supabase
+              .from("users")
+              .insert([
+                {
+                  id: authData.user.id,
+                  email: email,
+                  full_name: fullName,
+                  gender: gender,
+                  birth_date: birthDate,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                },
+              ]);
+
+            if (profileError) {
+              console.error("Profile creation error:", profileError);
+              throw new Error("Gagal membuat profil pengguna");
+            }
+          }
+
+          // Redirect to login page
+          window.location.href = "login.html";
+        } catch (error) {
+          console.error("Signup error:", error);
+          showError(
+            error.message ||
+              "Terjadi kesalahan saat pendaftaran. Silakan coba lagi."
+          );
+        } finally {
+          const submitButton = signupForm.querySelector(
+            'button[type="submit"]'
+          );
+          submitButton.disabled = false;
+          submitButton.textContent = "Daftar";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,202 @@
+-- Users Table
+create table public.users (
+  id uuid references auth.users on delete cascade not null primary key,
+  email text unique not null,
+  full_name text,
+  gender text,
+  birth_date date,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.users add column phone text;
+
+-- Health Metrics Table
+CREATE TABLE health_metrics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  weight DECIMAL NOT NULL, -- in kg
+  height DECIMAL NOT NULL, -- in cm
+  bmi DECIMAL NOT NULL,
+  bmi_category TEXT NOT NULL,
+  recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Reminders Table
+CREATE TABLE reminders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  reminder_type TEXT CHECK (reminder_type IN ('exercise', 'meal', 'checkup', 'medication', 'water', 'other')),
+  scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  repeat_pattern TEXT CHECK (repeat_pattern IN ('daily', 'weekly', 'monthly', 'none')),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Nutrition Logs
+CREATE TABLE nutrition_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  meal_type TEXT CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
+  food_items JSONB NOT NULL,
+  total_calories INT,
+  protein_grams DECIMAL,
+  carbs_grams DECIMAL,
+  fat_grams DECIMAL,
+  logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Exercise Logs
+CREATE TABLE exercise_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  exercise_type TEXT NOT NULL,
+  duration_minutes INT NOT NULL,
+  calories_burned INT,
+  notes TEXT,
+  logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Health Reports
+CREATE TABLE health_reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  report_period TEXT CHECK (report_period IN ('weekly', 'monthly', 'quarterly')),
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  summary TEXT,
+  metrics JSONB,
+  recommendations JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Educational Resources
+CREATE TABLE educational_resources (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  content_type TEXT CHECK (content_type IN ('article', 'video', 'webinar', 'infographic')),
+  category TEXT CHECK (category IN ('nutrition', 'fitness', 'mental_health', 'general_wellness')),
+  url TEXT,
+  content TEXT,
+  published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_featured BOOLEAN DEFAULT FALSE
+);
+
+-- User Preferences
+CREATE TABLE user_preferences (
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE PRIMARY KEY,
+  notification_enabled BOOLEAN DEFAULT TRUE,
+  email_notification BOOLEAN DEFAULT TRUE,
+  push_notification BOOLEAN DEFAULT TRUE,
+  theme TEXT DEFAULT 'light',
+  language TEXT DEFAULT 'id',
+  fitness_goal TEXT CHECK (fitness_goal IN ('lose_weight', 'gain_muscle', 'maintain', 'improve_health')),
+  target_weight DECIMAL,
+  weekly_exercise_goal INT, -- minutes per week
+  daily_calorie_goal INT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AI Recommendations 
+CREATE TABLE ai_recommendations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  recommendation_type TEXT CHECK (recommendation_type IN ('nutrition', 'exercise', 'lifestyle', 'general')),
+  content TEXT NOT NULL,
+  reasoning TEXT,
+  based_on JSONB, -- Metrics the recommendation is based on
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_viewed BOOLEAN DEFAULT FALSE
+);
+
+
+-- Tambahkan RLS policy
+alter table public.users enable row level security;
+
+create policy "Users can view their own profile" 
+  on public.users for select 
+  using ( auth.uid() = id );
+
+create policy "Users can update their own profile" 
+  on public.users for update 
+  using ( auth.uid() = id );
+
+create policy "Users can insert their own profile" 
+  on public.users for insert 
+  with check ( auth.uid() = id );
+
+-- Create necessary indexes
+CREATE INDEX idx_health_metrics_user_id ON health_metrics(user_id);
+CREATE INDEX idx_health_metrics_recorded_at ON health_metrics(recorded_at);
+CREATE INDEX idx_reminders_user_id ON reminders(user_id);
+CREATE INDEX idx_reminders_scheduled_at ON reminders(scheduled_at);
+CREATE INDEX idx_nutrition_logs_user_id ON nutrition_logs(user_id);
+CREATE INDEX idx_exercise_logs_user_id ON exercise_logs(user_id);
+CREATE INDEX idx_ai_recommendations_user_id ON ai_recommendations(user_id);
+
+/* filepath: /d:/ICT/amanda-website/SQL.txt */
+
+-- Enable RLS for user_preferences table
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for selecting user_preferences
+CREATE POLICY "Users can view their own preferences" 
+ON user_preferences
+FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- Create policy for inserting user_preferences
+CREATE POLICY "Users can insert their own preferences" 
+ON user_preferences
+FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+-- Create policy for updating user_preferences
+CREATE POLICY "Users can update their own preferences" 
+ON user_preferences
+FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- Add similar policies for other tables that AI needs to access
+-- For health_metrics
+ALTER TABLE health_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own health metrics"
+ON health_metrics
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- For exercise_logs
+ALTER TABLE exercise_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own exercise logs"
+ON exercise_logs
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- For nutrition_logs
+ALTER TABLE nutrition_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own nutrition logs"
+ON nutrition_logs
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- For reminders
+ALTER TABLE reminders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own reminders"
+ON reminders
+FOR SELECT
+USING (auth.uid() = user_id);
+
+-- For ai_recommendations
+ALTER TABLE ai_recommendations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own AI recommendations"
+ON ai_recommendations
+FOR SELECT
+USING (auth.uid() = user_id);

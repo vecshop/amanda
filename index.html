@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthTrack - Pemantau Kesehatan dan Aktivitas</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#7CB9E8" />
+    <link rel="icon" type="image/x-icon" href="/icons/logo64.ico" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="HealthTrack" />
+    <link rel="apple-touch-icon" href="/icons/logo256.ico" />
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        --primary-color: #7cb9e8; /* Pastel Blue */
+        --secondary-color: #b4e6b0; /* Pastel Green */
+        --accent-color: #ffb7b2; /* Pastel Pink */
+        --warning-color: #ffd8b1; /* Pastel Orange */
+        --info-color: #b5b9ff; /* Pastel Purple */
+        --bg-color: #f0f4f8; /* Light Blue Gray */
+        --card-hover: rgba(124, 185, 232, 0.1);
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: var(--bg-color);
+        padding-bottom: 76px;
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-amanda {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-amanda:hover {
+        background-color: #6ba7d6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(124, 185, 232, 0.3);
+      }
+
+      .btn-amanda:active {
+        transform: translateY(0);
+      }
+
+      .footer-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        padding: 0.75rem 0;
+        z-index: 1000;
+      }
+
+      .footer-nav a {
+        color: #666666;
+        text-decoration: none;
+        font-size: 0.875rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .footer-nav a.active {
+        color: var(--primary-color);
+      }
+
+      .footer-nav i {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .page-transition {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        transform: translateY(-100%);
+        transition: transform 0.5s ease-in-out;
+        z-index: 1000;
+      }
+
+      .page-transition.slide-down {
+        transform: translateY(0);
+      }
+
+      .form-select option {
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+      }
+
+      .form-select option i {
+        margin-right: 8px;
+      }
+
+      .carousel .carousel-inner {
+        min-height: 160px;
+      }
+
+      .carousel-item {
+        transition: transform 0.6s ease-in-out;
+      }
+
+      #carouselCounter {
+        min-width: 40px;
+        text-align: center;
+      }
+
+      .card {
+        position: relative;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        background-color: var(--card-hover);
+      }
+
+      .carousel-indicators {
+        margin: 0;
+        position: static;
+        justify-content: center;
+      }
+
+      .carousel-indicators button {
+        width: 8px !important;
+        height: 8px !important;
+        border-radius: 50%;
+        background-color: var(--primary-color) !important;
+        opacity: 0.3;
+      }
+
+      .carousel-indicators button.active {
+        opacity: 1;
+      }
+
+      /* Style for the icon preview */
+      .reminder-icon {
+        background-color: var(--bg-color);
+        padding: 1.5rem;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        transition: all 0.3s ease;
+      }
+
+      .reminder-icon:hover {
+        transform: scale(1.1) rotate(5deg);
+        background-color: var(--primary-color);
+      }
+
+      .reminder-icon:hover i {
+        color: white !important;
+      }
+
+      .activity-select-container {
+        position: relative;
+      }
+
+      .activity-select-container .form-select {
+        display: none;
+      }
+
+      .activity-select-button {
+        width: 100%;
+        text-align: left;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        cursor: pointer;
+      }
+
+      .activity-select-button:hover {
+        background-color: #f8f9fa;
+      }
+
+      .activity-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        max-height: 200px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        display: none;
+      }
+
+      .activity-options.show {
+        display: block;
+      }
+
+      .activity-option {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .activity-option:last-child {
+        border-bottom: none;
+      }
+
+      .activity-option:hover {
+        background-color: #f8f9fa;
+      }
+
+      .activity-option i {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+      }
+
+      /* Achievement Badge */
+      .achievement-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: var(--accent-color);
+        color: white;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* Progress Indicator */
+      .progress-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: conic-gradient(
+          var(--primary-color) var(--progress),
+          #e0e0e0 0deg
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        color: var(--primary-color);
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .progress-circle::before {
+        content: "";
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: white;
+        border-radius: 50%;
+      }
+
+      /* Reminder Toggle Switch */
+      .form-check-input {
+        background-color: var(--bg-color);
+        border-color: var(--primary-color);
+        width: 45px;
+        height: 24px;
+      }
+
+      .form-check-input:checked {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      /* Carousel Enhancements */
+      .carousel-item {
+        transition: transform 0.6s ease-in-out;
+      }
+
+      .carousel .btn {
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-color);
+        color: white;
+        transition: all 0.3s ease;
+      }
+
+      .carousel .btn:hover {
+        transform: scale(1.1);
+        background: var(--accent-color);
+      }
+
+      /* Gamification Elements */
+      .streak-counter {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        animation: slideIn 0.5s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* Level Progress */
+      .level-progress {
+        background: var(--bg-color);
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+
+      .level-progress-bar {
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        transition: width 0.5s ease;
+      }
+
+      /* Achievement Animation */
+      @keyframes celebrate {
+        0% {
+          transform: scale(0);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .achievement-unlocked {
+        animation: celebrate 0.5s ease;
+      }
+
+      /* General Enhancements */
+      .navbar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        ) !important;
+        border-radius: 0 0 1.5rem 1.5rem;
+        padding: 1rem;
+      }
+
+      .navbar * {
+        color: white !important;
+      }
+
+      .navbar-brand {
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Search Bar Enhancement */
+      .form-control.rounded-pill {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        color: white;
+      }
+
+      .form-control.rounded-pill::placeholder {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      /* Welcome Section Enhancement */
+      .welcome-section {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        border-radius: 1.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--secondary-color),
+          var(--info-color)
+        );
+        color: white;
+        margin-bottom: 2rem;
+      }
+
+      /* Cards Enhancement */
+      .card {
+        border-radius: 1.5rem;
+        background: white;
+        overflow: hidden;
+      }
+
+      .card:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+      }
+
+      /* Recommendation Cards */
+      .recommendation-card {
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .recommendation-card:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+      }
+
+      /* Article Cards */
+      .article-card {
+        position: relative;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .article-card:hover {
+        transform: translateY(-10px);
+      }
+
+      .article-card .card-img-top {
+        transition: all 0.3s ease;
+      }
+
+      .article-card:hover .card-img-top {
+        transform: scale(1.1);
+      }
+
+      /* Badge Enhancements */
+      .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        font-weight: normal;
+        letter-spacing: 0.5px;
+      }
+
+      /* Button Enhancements */
+      .btn-link {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-link:after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--primary-color);
+        transition: width 0.3s ease;
+      }
+
+      .btn-link:hover:after {
+        width: 100%;
+      }
+
+      /* Footer Nav Enhancement */
+      .footer-nav {
+        border-radius: 1.5rem 1.5rem 0 0;
+        padding: 1rem 0;
+      }
+
+      .footer-nav a {
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .footer-nav a:before {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 3px;
+        background: var(--primary-color);
+        transition: width 0.3s ease;
+        border-radius: 3px;
+      }
+
+      .footer-nav a.active:before {
+        width: 20px;
+      }
+
+      /* Animation Classes */
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      .slide-up {
+        animation: slideUp 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Level Info Enhancement */
+      .level-info {
+        background: linear-gradient(
+          135deg,
+          rgba(124, 185, 232, 0.1),
+          rgba(180, 230, 176, 0.1)
+        );
+        padding: 1rem;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .level-progress {
+        height: 0.5rem;
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      /* Carousel Enhancement */
+      .carousel .btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        color: var(--primary-color);
+      }
+
+      .carousel .btn:hover {
+        transform: scale(1.1);
+        background: var(--primary-color);
+        color: white;
+      }
+
+      /* Modal Enhancement */
+      .modal-content {
+        border-radius: 1.5rem;
+        border: none;
+      }
+
+      .modal-header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        );
+        color: white;
+        border-radius: 1.5rem 1.5rem 0 0;
+      }
+
+      .modal-header .btn-close {
+        color: white;
+        opacity: 1;
+      }
+
+      /* Form Controls Enhancement */
+      .form-control,
+      .form-select {
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        border: 2px solid transparent;
+        background: var(--bg-color);
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(124, 185, 232, 0.25);
+      }
+
+      /* Add this shared navbar styling to both files */
+      .navbar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        ) !important;
+        border-radius: 0 0 1.5rem 1.5rem;
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 1.5rem;
+        height: auto;
+      }
+
+      .navbar .container-fluid {
+        padding: 0 0.5rem;
+      }
+
+      .navbar-brand {
+        font-size: 1.25rem !important;
+        font-weight: 600;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .navbar img {
+        height: 32px;
+        width: auto;
+      }
+
+      .navbar .btn {
+        padding: 0.375rem;
+        font-size: 1.25rem;
+        line-height: 1;
+        color: white !important;
+      }
+
+      #notificationBadge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+      }
+
+      .navbar .d-flex {
+        gap: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <nav class="navbar navbar-light bg-white shadow-sm">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center">
+          <img src="icons/logo.png" alt="HealthTrack Logo" class="me-2" />
+          <h1 class="navbar-brand mb-0">HealthTrack</h1>
+        </div>
+        <div class="d-flex align-items-center">
+          <button id="notificationBtn" class="btn position-relative">
+            <i class="bi bi-bell-fill"></i>
+            <span
+              id="notificationBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+            >
+              3
+            </span>
+          </button>
+          <a id="aiBtn" class="btn" href="ai_amanda.html">
+            <i class="bi bi-robot"></i>
+          </a>
+        </div>
+      </div>
+      <!-- Search Bar (desktop only) -->
+      <div class="container-fluid px-3 d-none d-md-block pb-2">
+        <div class="position-relative">
+          <input
+            type="text"
+            class="form-control rounded-pill"
+            placeholder="Cari artikel, tips kesehatan..."
+          />
+          <button
+            class="btn position-absolute end-0 top-50 translate-middle-y me-2"
+          >
+            <i class="bi bi-search text-secondary"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-4">
+      <!-- Welcome Section -->
+      <section class="mb-4">
+        <h2 class="fw-bold mb-2" id="welcomeMessage">Halo, Pengguna!</h2>
+        <p class="text-secondary">
+          Ayo pantau kesehatan dan aktivitasmu hari ini.
+        </p>
+      </section>
+
+      <div class="streak-counter mb-4">
+        <i class="bi bi-fire"></i>
+        <span>5 Hari Beruntun!</span>
+      </div>
+
+      <div class="level-info mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-muted">Level 3</span>
+          <span class="small text-muted">250/500 XP</span>
+        </div>
+        <div class="level-progress">
+          <div class="level-progress-bar" style="width: 50%"></div>
+        </div>
+      </div>
+
+      <!-- Reminders Section -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 mb-0">Pengingat Aktivitas</h3>
+            <div class="d-flex align-items-center gap-2">
+              <button
+                class="btn btn-sm btn-light"
+                data-bs-target="#remindersCarousel"
+                data-bs-slide="prev"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <span id="carouselCounter" class="small text-secondary">1/3</span>
+              <button
+                class="btn btn-sm btn-light"
+                data-bs-target="#remindersCarousel"
+                data-bs-slide="next"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Reminders Carousel -->
+          <div
+            id="remindersCarousel"
+            class="carousel slide"
+            data-bs-ride="carousel"
+            data-bs-touch="true"
+          >
+            <div class="carousel-inner" style="min-height: 160px">
+              <!-- Reminders will be inserted here -->
+            </div>
+          </div>
+        </div>
+        <button
+          class="btn btn-link text-primary position-absolute bottom-0 end-0 p-3"
+          data-bs-toggle="modal"
+          data-bs-target="#reminderModal"
+        >
+          <i class="bi bi-plus"></i> Tambah
+        </button>
+      </div>
+
+      <!-- AI Recommendations -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 mb-0">Rekomendasi untuk Anda</h3>
+            <button
+              class="btn btn-link text-primary p-0"
+              id="allRecommendationsBtn"
+            >
+              Lihat Semua
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+          <div id="recommendationsList">
+            <div class="border-start border-4 border-primary ps-3 py-2 mb-3">
+              <h4 class="h6 fw-medium">Saran Nutrisi</h4>
+              <p class="small text-secondary mb-0">
+                Tingkatkan asupan protein untuk membantu pembentukan otot.
+                Konsumsi minimal 1.2g protein per kg berat badan.
+              </p>
+            </div>
+            <div class="border-start border-4 border-success ps-3 py-2 mb-3">
+              <h4 class="h6 fw-medium">Saran Aktivitas</h4>
+              <p class="small text-secondary mb-0">
+                Tambahkan latihan kekuatan 2x seminggu untuk meningkatkan
+                metabolisme dan kesehatan jantung.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Educational Resources -->
+      <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="h5 mb-0">Artikel Kesehatan</h3>
+          <button class="btn btn-link text-primary p-0" id="allArticlesBtn">
+            Lihat Semua
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+        <div class="row g-4">
+          <!-- Article 1 -->
+          <div class="col-12 col-md-6">
+            <div class="card h-100">
+              <img
+                src="https://d1bpj0tv6vfxyp.cloudfront.net/articles/1c749058-799f-4fe7-8cae-a457702a6ce5_article_image_url.webp"
+                class="card-img-top"
+                alt="Healthy Eating"
+                style="height: 200px; object-fit: cover"
+              />
+              <div class="card-body">
+                <span class="badge bg-success-subtle text-success mb-2"
+                  >Nutrisi</span
+                >
+                <h4 class="h6 fw-semibold">
+                  10 Makanan untuk Meningkatkan Energi
+                </h4>
+                <p class="small text-secondary">
+                  Pelajari tentang makanan-makanan super yang dapat meningkatkan
+                  energi Anda sepanjang hari tanpa efek sampingan seperti pada
+                  kafein.
+                </p>
+                <button class="btn btn-link text-primary p-0">
+                  Baca Selengkapnya
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Article 2 -->
+          <div class="col-12 col-md-6">
+            <div class="card h-100">
+              <img
+                src="https://d1vbn70lmn1nqe.cloudfront.net/prod/wp-content/uploads/2021/06/15012412/kesehatan-olahraga.jpg.webp"
+                class="card-img-top"
+                alt="Exercise Tips"
+                style="height: 200px; object-fit: cover"
+              />
+              <div class="card-body">
+                <span class="badge bg-primary-subtle text-primary mb-2"
+                  >Fitness</span
+                >
+                <h4 class="h6 fw-semibold">Latihan 15 Menit untuk Sibuk</h4>
+                <p class="small text-secondary">
+                  Rutinitas olahraga singkat namun efektif yang dapat Anda
+                  lakukan bahkan dengan jadwal yang padat.
+                </p>
+                <button class="btn btn-link text-primary p-0">
+                  Baca Selengkapnya
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div
+      class="modal fade"
+      id="reminderModal"
+      tabindex="-1"
+      aria-labelledby="reminderModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reminderModalLabel">
+              Tambah Pengingat Aktivitas
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="reminderForm">
+              <div class="mb-3 text-center reminder-icon">
+                <i class="bi bi-activity fs-4"></i>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Pilih Aktivitas</label>
+                <div class="activity-select-container">
+                  <button
+                    type="button"
+                    class="activity-select-button"
+                    id="activitySelectBtn"
+                  >
+                    <span class="selected-activity">Pilih aktivitas...</span>
+                  </button>
+                  <div class="activity-options" id="activityOptions">
+                    <!-- Options will be populated here -->
+                  </div>
+                  <select class="form-select" id="activitySelect" required>
+                    <option value="">Pilih aktivitas...</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="reminderTime" class="form-label"
+                  >Waktu Pengingat</label
+                >
+                <input
+                  type="time"
+                  class="form-control"
+                  id="reminderTime"
+                  required
+                />
+              </div>
+              <button type="submit" class="btn btn-amanda w-100">
+                <i class="bi bi-bell me-2"></i>
+                Atur Pengingat
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+      <div class="container">
+        <div class="row text-center g-0">
+          <div class="col">
+            <a href="#" class="active">
+              <i class="bi bi-house-fill"></i>
+              <span>Beranda</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="statistics.html">
+              <i class="bi bi-bar-chart-fill"></i>
+              <span>Statistik</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="jurnal.html">
+              <i class="bi bi-journal-text"></i>
+              <span>Jurnal</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="#">
+              <i class="bi bi-people-fill"></i>
+              <span>Komunitas</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="profile.html">
+              <i class="bi bi-person-fill"></i>
+              <span>Profil</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log("ServiceWorker registered:", registration);
+            })
+            .catch((error) => {
+              console.log("ServiceWorker registration failed:", error);
+            });
+        });
+      }
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+
+    <script type="module">
+      import { supabase, auth, db } from "./supabase.js";
+
+      const activityIcons = {
+        // Exercise icons
+        exercise: [
+          { keywords: ["lari", "jogging", "marathon"], icon: "bi-lightning" },
+          { keywords: ["sepeda", "bersepeda"], icon: "bi-bicycle" },
+          { keywords: ["yoga", "peregangan", "stretching"], icon: "bi-peace" },
+          { keywords: ["gym", "angkat", "beban"], icon: "bi-trophy" },
+          { keywords: ["senam", "aerobik"], icon: "bi-heart-pulse" },
+          { keywords: ["renang"], icon: "bi-water" },
+          { keywords: ["jalan", "hiking"], icon: "bi-person-walking" },
+        ],
+        // Nutrition icons
+        nutrition: [
+          { keywords: ["makan", "sarapan", "malam"], icon: "bi-egg-fried" },
+          { keywords: ["minum", "air"], icon: "bi-cup-straw" },
+          { keywords: ["buah", "sayur"], icon: "bi-apple" },
+          { keywords: ["suplemen", "vitamin"], icon: "bi-capsule" },
+        ],
+        // Wellness icons
+        wellness: [
+          { keywords: ["tidur", "istirahat"], icon: "bi-moon-stars" },
+          { keywords: ["meditasi", "relaksasi"], icon: "bi-peace" },
+          { keywords: ["tekanan darah", "tensi"], icon: "bi-heart-pulse-fill" },
+          { keywords: ["berat", "timbang"], icon: "bi-clipboard-data" },
+        ],
+      };
+
+      async function loadActivityOptions() {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) return;
+
+          // Get user's activities from exercise_logs
+          const { data: activities, error } = await supabase
+            .from("exercise_logs")
+            .select("id, exercise_type, logged_at")
+            .eq("user_id", user.id)
+            .order("logged_at", { ascending: false });
+
+          if (error) throw error;
+
+          // Create unique activities array
+          const uniqueActivities = [
+            ...new Set(activities.map((a) => a.exercise_type)),
+          ].map((exercise_type) => {
+            return activities.find((a) => a.exercise_type === exercise_type);
+          });
+
+          // Add options with icons using Bootstrap classes
+          uniqueActivities.forEach((activity) => {
+            const icon = findMatchingIcon(activity.exercise_type);
+            const option = document.createElement("option");
+            option.value = activity.id;
+            option.innerHTML = `<i class="bi ${icon} me-2"></i>${activity.exercise_type}`;
+            option.setAttribute("data-icon", icon);
+            activitySelect.appendChild(option);
+          });
+
+          // Initialize Bootstrap select
+          activitySelect.addEventListener("change", function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const icon =
+              selectedOption.getAttribute("data-icon") || "bi-activity";
+            const iconContainer = document.querySelector(".reminder-icon");
+            if (iconContainer) {
+              iconContainer.innerHTML = `<i class="bi ${icon} fs-4"></i>`;
+            }
+          });
+        } catch (error) {
+          console.error("Error loading activities:", error);
+          alert("Gagal memuat daftar aktivitas");
+        }
+      }
+
+      async function checkAuth() {
+        try {
+          const {
+            data: { user },
+            error,
+          } = await auth.getUser();
+
+          if (error || !user) {
+            console.log("User not logged in, redirecting to signup...");
+            window.location.href = "signup.html";
+            return null;
+          }
+
+          console.log("User logged in");
+          return user;
+        } catch (error) {
+          console.error("Authentication error:", error);
+          window.location.href = "signup.html";
+          return null;
+        }
+      }
+
+      // Check user session
+      async function checkUserSession() {
+        const {
+          data: { user },
+          error,
+        } = await auth.getUser();
+
+        if (error || !user) {
+          console.log("User not logged in");
+          // Redirect to login
+          return;
+        }
+
+        // Update UI with user data
+        updateUserUI(user);
+
+        // Load user's data
+        await Promise.all([loadAIRecommendations(user.id)]);
+      }
+
+      // Update UI with user data
+      function updateUserUI(user) {
+        document.getElementById("welcomeMessage").textContent = `Halo, ${
+          user.user_metadata.full_name || "Pengguna"
+        }!`;
+
+        if (user.user_metadata.avatar_url) {
+          document.getElementById("profilePic").src =
+            user.user_metadata.avatar_url;
+        }
+      }
+
+      function calculateBMICategory(bmi, weight, height) {
+        let category, color;
+
+        if (bmi < 18.5) {
+          category = "Berat Badan Kurang";
+          color = "blue";
+        } else if (bmi < 25) {
+          category = "Normal";
+          color = "green";
+        } else if (bmi < 30) {
+          category = "Berat Badan Lebih";
+          color = "yellow";
+        } else {
+          category = "Obesitas";
+          color = "red";
+        }
+
+        return {
+          bmi: bmi.toFixed(1),
+          category,
+          color,
+          weight,
+          height: height * 100,
+        };
+      }
+
+      // Load latest activities from exercise_logs
+      async function loadLatestActivities() {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) return;
+
+          const { data, error } = await supabase
+            .from("exercise_logs")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("logged_at", { ascending: false })
+            .limit(10);
+
+          if (error) throw error;
+
+          // Populate activity select in reminder modal
+          const activitySelect = document.getElementById("activitySelect");
+          activitySelect.innerHTML =
+            '<option value="">Pilih aktivitas...</option>';
+
+          data.forEach((activity) => {
+            const icon = findMatchingIcon(activity.exercise_type);
+            const option = document.createElement("option");
+            option.value = activity.id;
+            option.setAttribute("data-icon", icon);
+            option.textContent = activity.exercise_type;
+            activitySelect.appendChild(option);
+          });
+
+          // Add custom select styling with icons
+          const select = document.getElementById("activitySelect");
+          select.parentElement.querySelector(
+            ".form-select"
+          ).style.backgroundImage = "none";
+
+          select.addEventListener("change", function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const icon = selectedOption.getAttribute("data-icon");
+            updateReminderIcon(icon);
+          });
+
+          return data;
+        } catch (error) {
+          console.error("Error loading activities:", error);
+        }
+      }
+
+      function findMatchingIcon(activityName) {
+        const lowerActivity = activityName.toLowerCase();
+
+        for (const category of Object.values(activityIcons)) {
+          for (const item of category) {
+            if (
+              item.keywords.some((keyword) => lowerActivity.includes(keyword))
+            ) {
+              return item.icon;
+            }
+          }
+        }
+
+        return "bi-activity"; // Default icon
+      }
+
+      function updateReminderIcon(icon) {
+        const iconContainer = document.querySelector(".reminder-icon");
+        if (iconContainer) {
+          iconContainer.innerHTML = `<i class="bi ${icon} fs-4"></i>`;
+        }
+      }
+
+      // Load and display reminders
+      // Replace the loadReminders function in your script section
+
+      // Replace the loadReminders function with:
+
+      async function loadReminders() {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) return;
+
+          const { data, error } = await supabase
+            .from("reminders")
+            .select(
+              `
+                id,
+                scheduled_at,
+                is_active,
+                exercise_log_id,
+                exercise_logs!inner (
+                    exercise_type
+                )
+            `
+            )
+            .eq("user_id", user.id)
+            .order("scheduled_at", { ascending: true });
+
+          if (error) throw error;
+
+          // Wait for DOM to be ready
+          await new Promise((resolve) => {
+            if (document.readyState === "complete") {
+              resolve();
+            } else {
+              window.addEventListener("load", resolve);
+            }
+          });
+
+          const carouselInner = document.querySelector(
+            "#remindersCarousel .carousel-inner"
+          );
+          if (!carouselInner) {
+            console.error("Carousel inner element not found");
+            return;
+          }
+
+          // Clear and initialize content
+          carouselInner.innerHTML = "";
+
+          if (!data || data.length === 0) {
+            carouselInner.innerHTML = `
+                <div class="carousel-item active">
+                    <div class="text-center text-secondary py-3">
+                        Belum ada pengingat aktivitas
+                    </div>
+                </div>
+            `;
+            return;
+          }
+
+          // Group reminders into sets of 2
+          const reminderGroups = [];
+          for (let i = 0; i < data.length; i += 2) {
+            reminderGroups.push(data.slice(i, i + 2));
+          }
+
+          // Update counter
+          const counter = document.getElementById("carouselCounter");
+          if (counter) {
+            counter.textContent = `1/${reminderGroups.length}`;
+          }
+
+          // Create carousel items
+          reminderGroups.forEach((group, index) => {
+            const carouselItem = document.createElement("div");
+            carouselItem.className = `carousel-item ${
+              index === 0 ? "active" : ""
+            }`;
+            carouselItem.innerHTML = group
+              .map(
+                (reminder) => `
+                <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi ${findMatchingIcon(
+                              reminder.exercise_logs.exercise_type
+                            )} text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">${
+                              reminder.exercise_logs.exercise_type
+                            }</h6>
+                            <small class="text-muted">
+                                ${new Date(
+                                  reminder.scheduled_at
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check form-switch me-2">
+                            <input type="checkbox" class="form-check-input reminder-toggle"
+                                   data-reminder-id="${reminder.id}"
+                                   ${reminder.is_active ? "checked" : ""}>
+                        </div>
+                    </div>
+                </div>
+            `
+              )
+              .join("");
+            carouselInner.appendChild(carouselItem);
+          });
+
+          // Initialize carousel
+          const carousel = document.querySelector("#remindersCarousel");
+          if (carousel) {
+            // Update counter on slide
+            carousel.addEventListener("slide.bs.carousel", function (e) {
+              const currentSlide = e.to + 1;
+              if (counter) {
+                counter.textContent = `${currentSlide}/${reminderGroups.length}`;
+              }
+            });
+
+            // Initialize Bootstrap carousel
+            new bootstrap.Carousel(carousel, {
+              touch: true,
+              interval: 5000,
+            });
+          }
+
+          // Add toggle event listeners
+          document.querySelectorAll(".reminder-toggle").forEach((toggle) => {
+            toggle.addEventListener("change", async function () {
+              const reminderId = this.dataset.reminderId;
+              if (!reminderId) return;
+
+              try {
+                const { error } = await supabase
+                  .from("reminders")
+                  .update({ is_active: this.checked })
+                  .eq("id", reminderId);
+
+                if (error) throw error;
+              } catch (error) {
+                console.error("Error updating reminder:", error);
+                this.checked = !this.checked;
+                alert("Gagal mengubah status pengingat. Silakan coba lagi.");
+              }
+            });
+          });
+        } catch (error) {
+          console.error("Error loading reminders:", error);
+        }
+      }
+
+      // Add the editReminder function
+      async function editReminder(reminderId) {
+        try {
+          // Get reminder data
+          const { data, error } = await supabase
+            .from("reminders")
+            .select("*")
+            .eq("id", reminderId)
+            .single();
+
+          if (error) {
+            console.error("Error fetching reminder:", error);
+            return;
+          }
+
+          // Populate modal with reminder data
+          document.getElementById("activitySelect").value =
+            data.exercise_log_id;
+          const time = new Date(data.scheduled_at);
+          document.getElementById("reminderTime").value = `${String(
+            time.getHours()
+          ).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
+
+          // Show modal
+          const modal = new bootstrap.Modal(
+            document.getElementById("reminderModal")
+          );
+          modal.show();
+        } catch (error) {
+          console.error("Error editing reminder:", error);
+          alert("Gagal memuat data pengingat. Silakan coba lagi.");
+        }
+      }
+
+      // Initialize reminder modal
+      function initializeReminderModal() {
+        const reminderModal = document.getElementById("reminderModal");
+        const form = document.getElementById("reminderForm");
+
+        // Initialize Bootstrap modal
+        const modal = new bootstrap.Modal(reminderModal);
+
+        // Load activities when modal is shown
+        const activitySelectBtn = document.getElementById("activitySelectBtn");
+        const activityOptions = document.getElementById("activityOptions");
+        const activitySelect = document.getElementById("activitySelect");
+
+        // Toggle options display
+        activitySelectBtn.addEventListener("click", () => {
+          activityOptions.classList.toggle("show");
+        });
+
+        // Close options when clicking outside
+        document.addEventListener("click", (e) => {
+          if (
+            !activitySelectBtn.contains(e.target) &&
+            !activityOptions.contains(e.target)
+          ) {
+            activityOptions.classList.remove("show");
+          }
+        });
+
+        // Load activities
+        reminderModal.addEventListener("show.bs.modal", async () => {
+          try {
+            const {
+              data: { user },
+            } = await auth.getUser();
+            if (!user) return;
+
+            const { data: activities, error } = await supabase
+              .from("exercise_logs")
+              .select("id, exercise_type")
+              .eq("user_id", user.id)
+              .order("logged_at", { ascending: false });
+
+            if (error) throw error;
+
+            // Create unique activities array
+            const uniqueActivities = [
+              ...new Set(activities.map((a) => a.exercise_type)),
+            ].map((exerciseType) => {
+              return activities.find((a) => a.exercise_type === exerciseType);
+            });
+
+            // Clear existing options
+            activityOptions.innerHTML = "";
+            activitySelect.innerHTML =
+              '<option value="">Pilih aktivitas...</option>';
+
+            // Add options
+            uniqueActivities.forEach((activity) => {
+              const icon = findMatchingIcon(activity.exercise_type);
+
+              // Add to hidden select (for form submission)
+              const option = document.createElement("option");
+              option.value = activity.id;
+              option.textContent = activity.exercise_type;
+              activitySelect.appendChild(option);
+
+              // Add to custom dropdown
+              const optionDiv = document.createElement("div");
+              optionDiv.className = "activity-option";
+              optionDiv.innerHTML = `
+                      <i class="bi ${icon}"></i>
+                      <span>${activity.exercise_type}</span>
+                  `;
+              optionDiv.addEventListener("click", () => {
+                activitySelect.value = activity.id;
+                activitySelectBtn.querySelector(
+                  ".selected-activity"
+                ).textContent = activity.exercise_type;
+                updateReminderIcon(icon);
+                activityOptions.classList.remove("show");
+              });
+              activityOptions.appendChild(optionDiv);
+            });
+          } catch (error) {
+            console.error("Error loading activities:", error);
+            alert("Gagal memuat daftar aktivitas");
+          }
+        });
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const activityId = document.getElementById("activitySelect").value;
+          const reminderTime = document.getElementById("reminderTime").value;
+
+          if (!activityId) {
+            alert("Silakan pilih aktivitas");
+            return;
+          }
+
+          try {
+            const {
+              data: { user },
+            } = await auth.getUser();
+            if (!user) throw new Error("User not authenticated");
+
+            // Get activity details for the title
+            const { data: activity } = await supabase
+              .from("exercise_logs")
+              .select("exercise_type")
+              .eq("id", activityId)
+              .single();
+
+            const [hours, minutes] = reminderTime.split(":");
+            const scheduledAt = new Date();
+            scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const { error } = await supabase.from("reminders").insert([
+              {
+                user_id: user.id,
+                exercise_log_id: activityId,
+                title: `Pengingat: ${activity.exercise_type}`, // Add title
+                description: `Waktunya untuk ${activity.exercise_type}`, // Optional description
+                scheduled_at: scheduledAt.toISOString(),
+                is_active: true,
+                reminder_type: "exercise",
+                repeat_pattern: "none", // Add repeat_pattern as required in schema
+              },
+            ]);
+
+            if (error) throw error;
+
+            modal.hide();
+            form.reset();
+            await loadReminders();
+          } catch (error) {
+            console.error("Error saving reminder:", error);
+            alert("Gagal menyimpan pengingat. Silakan coba lagi.");
+          }
+        });
+      }
+
+      // Load user's reminders from Supabase
+      async function loadUserReminders(userId) {
+        const { data, error } = await window.supabase
+          .from("reminders")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("is_active", true)
+          .order("scheduled_at", { ascending: true });
+
+        if (error) {
+          console.error("Error loading reminders:", error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const remindersList = document.getElementById("remindersList");
+          remindersList.innerHTML = ""; // Clear existing reminders
+
+          data.forEach((reminder) => {
+            // Get icon based on reminder type
+            let icon, bgColor, iconColor;
+            switch (reminder.reminder_type) {
+              case "exercise":
+                icon = "bi-activity";
+                bgColor = "bg-blue-100";
+                iconColor = "text-primary-color";
+                break;
+              case "meal":
+                icon = "bi-cup-hot-fill";
+                bgColor = "bg-green-100";
+                iconColor = "text-secondary-color";
+                break;
+              case "checkup":
+                icon = "bi-clipboard-pulse";
+                bgColor = "bg-purple-100";
+                iconColor = "text-purple-600";
+                break;
+              case "medication":
+                icon = "bi-capsule";
+                bgColor = "bg-red-100";
+                iconColor = "text-red-600";
+                break;
+              case "water":
+                icon = "bi-droplet-fill";
+                bgColor = "bg-blue-100";
+                iconColor = "text-blue-600";
+                break;
+              default:
+                icon = "bi-bell-fill";
+                bgColor = "bg-gray-100";
+                iconColor = "text-gray-600";
+            }
+
+            // Format time
+            const scheduledTime = new Date(reminder.scheduled_at);
+            const timeString = scheduledTime.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            let repeatText = "";
+
+            switch (reminder.repeat_pattern) {
+              case "daily":
+                repeatText = "Setiap hari";
+                break;
+              case "weekly":
+                repeatText = "Setiap minggu";
+                break;
+              case "monthly":
+                repeatText = "Setiap bulan";
+                break;
+              default:
+                repeatText = "Sekali";
+            }
+
+            // Create reminder item
+            const reminderItem = document.createElement("div");
+            reminderItem.className =
+              "flex items-center justify-between py-2 border-b";
+            reminderItem.innerHTML = `
+                              <div class="flex items-center">
+                                  <div class="${bgColor} p-2 rounded-full mr-3">
+                                      <i class="bi ${icon} h-5 w-5 ${iconColor}"></i>
+                                  </div>
+                                                      <div>
+                                                          <h4 class="font-medium">${reminder.title}</h4>
+                                                          <p class="text-xs text-light-text">${repeatText}, ${timeString}</p>
+                                                      </div>
+                                                  </div>
+                                                  <label class="switch">
+                                                      <input type="checkbox" checked onchange="toggleReminder('${reminder.id}', this.checked)">
+                                                      <span class="slider round"></span>
+                                                  </label>
+                                              `;
+
+            remindersList.appendChild(reminderItem);
+          });
+
+          // Re-initialize Feather icons for newly added elements
+          feather.replace();
+        }
+      }
+
+      // Toggle reminder active status
+      async function toggleReminder(reminderId, isActive) {
+        const { error } = await window.supabase
+          .from("reminders")
+          .update({ is_active: isActive })
+          .eq("id", reminderId);
+
+        if (error) {
+          console.error("Error updating reminder:", error);
+          alert("Gagal mengubah status pengingat. Silakan coba lagi.");
+        }
+      }
+
+      // Load AI recommendations
+      async function loadAIRecommendations(userId) {
+        try {
+          const { data, error } = await supabase
+            .from("ai_recommendations")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(2);
+
+          if (error) throw error;
+
+          // Update recommendations UI
+          const recommendationsList = document.getElementById(
+            "recommendationsList"
+          );
+          if (data && data.length > 0) {
+            recommendationsList.innerHTML = data
+              .map(
+                (rec) => `
+                          <div class="border-start border-4 border-primary ps-3 py-2 mb-3">
+                              <h4 class="h6 fw-medium">${rec.title}</h4>
+                              <p class="small text-secondary mb-0">${rec.content}</p>
+                          </div>
+                      `
+              )
+              .join("");
+          }
+        } catch (error) {
+          console.error("Error loading recommendations:", error);
+        }
+      }
+
+      // Helper function to get recommendation type text
+      function getRecommendationTypeText(type) {
+        switch (type) {
+          case "nutrition":
+            return "Nutrisi";
+          case "exercise":
+            return "Aktivitas";
+          case "lifestyle":
+            return "Gaya Hidup";
+          default:
+            return "Umum";
+        }
+      }
+
+      // Mark recommendation as viewed
+      async function markRecommendationAsViewed(recommendationId) {
+        await window.supabase
+          .from("ai_recommendations")
+          .update({ is_viewed: true })
+          .eq("id", recommendationId);
+      }
+
+      // Event listener for viewing all recommendations
+      document
+        .getElementById("allRecommendationsBtn")
+        .addEventListener("click", function () {
+          // In a full implementation, this would navigate to a recommendations page
+          alert("Halaman rekomendasi lengkap akan segera hadir!");
+        });
+
+      // Event listener for viewing all articles
+      document
+        .getElementById("allArticlesBtn")
+        .addEventListener("click", function () {
+          // In a full implementation, this would navigate to an articles page
+          alert("Halaman artikel lengkap akan segera hadir!");
+        });
+
+      document.getElementById("aiBtn").addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // Create transition overlay
+        const overlay = document.createElement("div");
+        overlay.className = "page-transition";
+        document.body.appendChild(overlay);
+
+        // Trigger slide down animation
+        setTimeout(() => {
+          overlay.classList.add("slide-down");
+        }, 100);
+
+        // Navigate to ai-amanda.html after animation
+        setTimeout(() => {
+          window.location.href = "ai_amanda.html";
+        }, 500);
+      });
+
+      // Check for pending notifications
+      async function checkNotifications() {
+        try {
+          const { supabase } = await import("./supabase.js");
+          const {
+            data: { user },
+            error,
+          } = await supabase.auth.getUser();
+
+          if (error || !user) {
+            console.log("User not logged in");
+            return;
+          }
+
+          // Update notification badge
+          const badge = document.getElementById("notificationBadge");
+          badge.textContent = "3"; // Sample count
+
+          // Set up notification button
+          document
+            .getElementById("notificationBtn")
+            .addEventListener("click", function () {
+              alert(
+                "Notifikasi:\n- Waktunya minum air!\n- Jadwal olahraga hari ini pukul 17:00\n- Laporan kesehatan mingguan Anda siap"
+              );
+              badge.textContent = "0";
+              badge.classList.add("hidden");
+            });
+        } catch (error) {
+          console.error("Error checking notifications:", error);
+        }
+      }
+
+      // Call notification check when page loads
+      document.addEventListener("DOMContentLoaded", async function () {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) {
+            window.location.href = "login.html";
+            return;
+          }
+
+          await Promise.all([loadAIRecommendations(user.id), loadReminders()]);
+
+          initializeReminderModal();
+        } catch (error) {
+          console.error("Error initializing app:", error);
+        }
+      });
+
+      function displayReminder(reminder) {
+        const icon = findMatchingIcon(reminder.exercise_logs.exercise_type);
+        return `
+              <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                  <div class="d-flex align-items-center">
+                      <div class="bg-light rounded-circle p-2 me-3">
+                          <i class="bi ${icon} text-primary"></i>
+                      </div>
+                      <div>
+                          <h6 class="mb-0">${
+                            reminder.exercise_logs.exercise_type
+                          }</h6>
+                          <small class="text-muted">
+                              ${new Date(
+                                reminder.scheduled_at
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                          </small>
+                      </div>
+                  </div>
+                  <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox"
+                             ${reminder.is_active ? "checked" : ""}
+                             data-reminder-id="${reminder.id}">
+                  </div>
+              </div>
+          `;
+      }
+
+      function initializeGamification() {
+        // Add achievement badges to completed activities
+        document
+          .querySelectorAll(".reminder-toggle:checked")
+          .forEach((toggle) => {
+            const reminderItem = toggle.closest(".d-flex");
+            if (!reminderItem.querySelector(".achievement-badge")) {
+              const badge = document.createElement("div");
+              badge.className = "achievement-badge";
+              badge.innerHTML = "+5";
+              reminderItem.style.position = "relative";
+              reminderItem.appendChild(badge);
+            }
+          });
+
+        // Add progress indication
+        document.querySelectorAll(".reminder-icon").forEach((icon) => {
+          icon.style.setProperty("--progress", "75%");
+        });
+      }
+
+      // Add event listener for toggle switches to trigger achievements
+      document.querySelectorAll(".reminder-toggle").forEach((toggle) => {
+        toggle.addEventListener("change", function () {
+          if (this.checked) {
+            const reminderItem = this.closest(".d-flex");
+            const badge = document.createElement("div");
+            badge.className = "achievement-badge achievement-unlocked";
+            badge.innerHTML = "+5";
+            reminderItem.style.position = "relative";
+            reminderItem.appendChild(badge);
+
+            // Update XP bar
+            const progressBar = document.querySelector(".level-progress-bar");
+            const currentWidth = parseInt(progressBar.style.width) || 0;
+            progressBar.style.width = Math.min(currentWidth + 10, 100) + "%";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

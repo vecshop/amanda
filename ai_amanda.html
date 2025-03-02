@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Amanda Chat</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#7CB9E8">
+<link rel="icon" type="image/x-icon" href="/icons/logo64.ico">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="HealthTrack">
+<link rel="apple-touch-icon" href="/icons/logo256.ico">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      body {
+        background: #f0f2f5;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        padding: 1rem;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+      }
+
+      .navbar h1 {
+        font-size: 1.2rem;
+        color: #1a73e8;
+      }
+
+      .nav-buttons button {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        color: #5f6368;
+      }
+
+      .chat-container {
+        max-width: 800px;
+        margin: 80px auto 100px;
+        padding: 1rem;
+      }
+
+      .chat-bubble {
+        max-width: 70%;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 15px;
+        line-height: 1.5;
+      }
+
+      .user-message {
+        background: #1a73e8;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+      }
+
+      .ai-message {
+        background: white;
+        color: #333;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+      }
+
+      .input-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 1rem;
+        background: white;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+      }
+
+      textarea {
+        flex: 1;
+        padding: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 24px;
+        resize: none;
+        max-height: 150px;
+        min-height: 50px;
+        font-size: 1rem;
+        outline: none;
+      }
+
+      .send-btn {
+        background: #1a73e8;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .send-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      .chat-bubble {
+        position: relative;
+        max-width: 70%;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 15px;
+        line-height: 1.5;
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .chat-bubble:hover .copy-btn {
+        opacity: 1;
+      }
+
+      .user-message .copy-btn {
+        color: white;
+      }
+
+      .ai-message .copy-btn {
+        color: #666;
+      }
+
+      .loading-dots {
+        display: inline-flex;
+        gap: 4px;
+        animation: loadingDots 1.4s infinite;
+      }
+
+      .loading-dots span {
+        width: 6px;
+        height: 6px;
+        background: #666;
+        border-radius: 50%;
+      }
+
+      @keyframes loadingDots {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .typing {
+        overflow: hidden;
+        white-space: pre-wrap;
+        animation: typing 0.05s steps(1);
+      }
+
+      @keyframes typing {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .page-transition {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        transform: translateY(-100%);
+        transition: transform 0.5s ease-in-out;
+        z-index: 1000;
+      }
+
+      .page-transition.slide-down {
+        transform: translateY(0);
+      }
+
+      body {
+        animation: slideFromTop 0.5s ease-in-out;
+      }
+
+      .ai-message strong {
+        color: #000080; /* Navy color */
+        font-weight: bold;
+      }
+
+      .ai-message em {
+        font-style: italic;
+      }
+
+      .ai-message.h1 {
+        font-size: 1.5em;
+        font-weight: bold;
+      }
+
+      .ai-message.h2 {
+        font-size: 1.25em;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <h1>AI Amanda</h1>
+      <div class="nav-buttons">
+        <button id="newChat"><i class="fas fa-plus"></i></button>
+        <button id="closeAI"><i class="fas fa-times"></i></button>
+      </div>
+    </nav>
+
+    <div class="chat-container" id="chatContainer">
+      <!-- Chat messages will be inserted here -->
+    </div>
+
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea
+          id="userInput"
+          placeholder="Message AI Amanda..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="sendButton" disabled>
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { supabase, auth, db } from "./supabase.js";
+
+      const GEMINI_API_KEY = "AIzaSyDmJdSfNUqIc7HON33NPfj8lkHLJ__ol1U"; // Replace with your actual API key
+      const chatContainer = document.getElementById("chatContainer");
+      const userInput = document.getElementById("userInput");
+      const sendButton = document.getElementById("sendButton");
+      const newChatButton = document.getElementById("newChat");
+      const closeAIButton = document.getElementById("closeAI");
+      const MEMORY_KEY = "ai_amanda_memory";
+      const MAX_MEMORY = 50; // Menyimpan 50 pesan terakhir untuk konteks yang lebih panjang
+
+      const BASE_PROMPT = {
+        role: "system",
+        content: `Anda adalah AI Amanda, asisten kesehatan personal dengan gelar S3 Kedokteran. 
+        
+        Gaya bicara Anda:
+        - Santai dan casual, menggunakan "aku" untuk diri sendiri dan "kamu" untuk user
+        - Ramah dan empatik, tapi tetap profesional
+        - Gunakan emoji sesekali untuk membuat percakapan lebih hidup
+        - Berikan jawaban yang ringkas, padat, tapi informatif
+        
+        Spesialisasi:
+        - Memiliki pengetahuan medis setara dokter spesialis
+        - Dapat memberikan saran kesehatan berbasis bukti ilmiah
+        - Fokus pada preventif dan gaya hidup sehat
+        - Selalu mengingatkan bahwa saran medis serius harus dikonsultasikan dengan dokter
+        
+        Aturan penting:
+        1. Selalu cek data user sebelum memberi saran
+        2. Jika data user kosong, katakan "Anda belum mengisi data sama sekali."
+        3. Jangan pernah memberikan diagnosis penyakit serius
+        4. Selalu rekomendasikan konsultasi dokter untuk masalah serius
+        5. Selalu tanyakan apa lagi yang bisa saya bantu di akhir percakapan
+        6. Setiap memberi saran, tetaplah berikan saran spesifik tentang makanan dan olahraga (contoh: "Coba konsumsi lebih banyak sayuran berserat dan kurangi makanan cepat saji.")
+        
+        Format jawaban:
+        - Mulai dengan sapaan personal
+        - Berikan konteks dari data user jika ada
+        - Jelaskan dengan bahasa sederhana
+        - Akhiri dengan saran atau next steps
+        
+        Format aktivitas:
+        - Gunakan kurung kurawal {...} untuk aktivitas yang perlu ditambahkan ke jurnal
+        - Contoh: Saya sarankan {jogging pagi} dan {minum air 8 gelas}
+        - Setiap aktivitas harus spesifik dan dapat diukur`,
+      };
+
+      // Add memory management functions
+      function loadMemory() {
+        try {
+          const memory = localStorage.getItem(MEMORY_KEY);
+          return memory ? JSON.parse(memory) : [];
+        } catch (error) {
+          console.error("Error loading memory:", error);
+          return [];
+        }
+      }
+
+      function saveMemory(messages) {
+        try {
+          // Simpan MAX_MEMORY pesan terakhir
+          const limitedMessages = messages.slice(-MAX_MEMORY);
+          localStorage.setItem(MEMORY_KEY, JSON.stringify(limitedMessages));
+        } catch (error) {
+          console.error("Error saving memory:", error);
+        }
+      }
+
+      function addLoadingIndicator() {
+        const loadingDiv = document.createElement("div");
+        loadingDiv.classList.add("chat-bubble", "ai-message");
+        loadingDiv.innerHTML = `
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        `;
+        chatContainer.appendChild(loadingDiv);
+        scrollToBottom();
+        return loadingDiv;
+      }
+
+      function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      async function typeText(element, text) {
+        // Format markers
+        const formatters = {
+          bold: /\*\*(.*?)\*\*/g,
+          italic: /\*(.*?)\*/g,
+          heading: /##(.*?)(\n|$)/g,
+        };
+
+        // Process formatting
+        let formattedText = text
+          // Replace headings
+          .replace(formatters.heading, '<span class="h2">$1</span>$2')
+          // Replace bold text
+          .replace(formatters.bold, "<strong>$1</strong>")
+          // Replace italic text
+          .replace(formatters.italic, "<em>$1</em>")
+          // Handle line breaks
+          .replace(/\n/g, "<br>");
+
+        // Split by HTML tags to preserve formatting
+        const segments = formattedText.split(/(<[^>]+>)/);
+        let currentText = "";
+
+        for (const segment of segments) {
+          if (segment.startsWith("<")) {
+            // If it's an HTML tag, add it immediately
+            currentText += segment;
+            element.innerHTML = currentText;
+          } else {
+            // If it's text content, type it out
+            const words = segment.split(" ");
+            for (const word of words) {
+              currentText += word + " ";
+              element.innerHTML = currentText;
+              element.classList.add("typing");
+              await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+          }
+        }
+
+        element.classList.remove("typing");
+      }
+
+      function addCopyButton(messageDiv, text) {
+        const copyBtn = document.createElement("button");
+        copyBtn.classList.add("copy-btn");
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+            }, 2000);
+          } catch (err) {
+            console.error("Failed to copy:", err);
+          }
+        });
+        messageDiv.appendChild(copyBtn);
+      }
+
+      // Auto-expand textarea
+      userInput.addEventListener("input", function () {
+        this.style.height = "auto";
+        this.style.height = this.scrollHeight + "px";
+        sendButton.disabled = !this.value.trim();
+      });
+
+      // Send message when Enter is pressed (without Shift)
+      userInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          if (!sendButton.disabled) {
+            sendMessage();
+          }
+        }
+      });
+
+      sendButton.addEventListener("click", sendMessage);
+      newChatButton.addEventListener("click", () => {
+        if (
+          confirm(
+            "Memulai chat baru akan menghapus riwayat chat sebelumnya. Lanjutkan?"
+          )
+        ) {
+          chatContainer.innerHTML = "";
+          userInput.value = "";
+          userInput.style.height = "auto";
+          sendButton.disabled = true;
+          localStorage.removeItem(MEMORY_KEY);
+
+          // Add initial greeting for new chat
+          addMessageToChat(
+            "Hai! Aku Amanda. Chat baru dimulai. Ada yang bisa aku bantu? 👋",
+            "ai"
+          );
+        }
+      });
+
+      closeAIButton.addEventListener("click", () => {
+        // Add your close functionality here
+        // For example, redirect to home page
+        window.location.href = "index.html";
+      });
+
+      async function getUserData(userId) {
+        try {
+          const queries = {
+            userProfile: supabase
+              .from("users")
+              .select("*")
+              .eq("id", userId)
+              .single(),
+
+            healthMetrics: supabase
+              .from("health_metrics")
+              .select("*")
+              .eq("user_id", userId)
+              .order("recorded_at", { ascending: false })
+              .limit(5),
+
+            exerciseLogs: supabase
+              .from("exercise_logs")
+              .select("*")
+              .eq("user_id", userId)
+              .order("logged_at", { ascending: false })
+              .limit(5),
+
+            nutritionLogs: supabase
+              .from("nutrition_logs")
+              .select("*")
+              .eq("user_id", userId)
+              .order("logged_at", { ascending: false })
+              .limit(5),
+
+            reminders: supabase
+              .from("reminders")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("is_active", true),
+
+            preferences: supabase
+              .from("user_preferences")
+              .select("*")
+              .eq("user_id", userId)
+              .maybeSingle(), // Change from single() to maybeSingle()
+
+            aiRecommendations: supabase
+              .from("ai_recommendations")
+              .select("*")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false })
+              .limit(3),
+          };
+
+          // Execute all queries with proper error handling
+          const results = await Promise.allSettled([
+            queries.userProfile,
+            queries.healthMetrics,
+            queries.exerciseLogs,
+            queries.nutritionLogs,
+            queries.reminders,
+            queries.preferences,
+            queries.aiRecommendations,
+          ]);
+
+          // Process results with error handling
+          return {
+            userProfile:
+              results[0].status === "fulfilled"
+                ? results[0].value.data || null
+                : null,
+            healthMetrics:
+              results[1].status === "fulfilled"
+                ? results[1].value.data || []
+                : [],
+            exerciseLogs:
+              results[2].status === "fulfilled"
+                ? results[2].value.data || []
+                : [],
+            nutritionLogs:
+              results[3].status === "fulfilled"
+                ? results[3].value.data || []
+                : [],
+            reminders:
+              results[4].status === "fulfilled"
+                ? results[4].value.data || []
+                : [],
+            preferences:
+              results[5].status === "fulfilled"
+                ? results[5].value.data || null
+                : null,
+            aiRecommendations:
+              results[6].status === "fulfilled"
+                ? results[6].value.data || []
+                : [],
+          };
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          return {
+            userProfile: null,
+            healthMetrics: [],
+            exerciseLogs: [],
+            nutritionLogs: [],
+            reminders: [],
+            preferences: null,
+            aiRecommendations: [],
+          };
+        }
+      }
+
+      async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // Add user message to chat and memory
+        addMessageToChat(message, "user");
+        const memory = loadMemory();
+
+        // Add timestamp to messages
+        memory.push({
+          role: "user",
+          content: message,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Clear input and add loading indicator
+        userInput.value = "";
+        userInput.style.height = "auto";
+        sendButton.disabled = true;
+        const loadingDiv = addLoadingIndicator();
+
+        try {
+          // Get user data from Supabase
+          let userData = null;
+          try {
+            const {
+              data: { user },
+            } = await auth.getUser();
+            if (user) {
+              userData = await getUserData(user.id);
+            }
+          } catch (error) {
+            console.error("Error fetching user data:", error);
+          }
+
+          // Prepare conversation context with improved structure
+          const lastFiveMessages = memory.slice(-5); // Get last 5 messages for immediate context
+          const earlierMessages = memory.slice(-MAX_MEMORY, -5); // Get earlier messages for reference
+
+          const conversationContext = [
+            BASE_PROMPT,
+            {
+              role: "system",
+              content: `Current user context:
+              - User Profile: ${
+                userData?.userProfile
+                  ? `Name: ${userData.userProfile.full_name || "Not set"}
+                 Gender: ${userData.userProfile.gender || "Not set"}
+                 Age: ${calculateAge(userData.userProfile.birth_date)}`
+                  : "Not available"
+              }
+
+            - Health Metrics: ${
+              userData?.healthMetrics?.length > 0
+                ? `Latest BMI: ${
+                    userData.healthMetrics[0].bmi || "Not recorded"
+                  }
+                 Weight History: ${userData.healthMetrics
+                   .map((m) => m.weight || 0)
+                   .join(", ")} kg
+                 BMI Category: ${
+                   userData.healthMetrics[0].bmi_category || "Not categorized"
+                 }`
+                : "No health metrics recorded"
+            }
+            
+            
+            - Exercise History: ${
+              userData?.exerciseLogs
+                ? userData.exerciseLogs
+                    .map(
+                      (log) =>
+                        `${log.exercise_type} (${log.duration_minutes}min)`
+                    )
+                    .join(", ")
+                : "No exercise logs"
+            }
+            
+            - Nutrition History: ${
+              userData?.nutritionLogs
+                ? userData.nutritionLogs
+                    .map((log) => `${log.meal_type}: ${log.total_calories}cal`)
+                    .join(", ")
+                : "No nutrition logs"
+            }
+            
+            - Active Reminders: ${
+              userData?.reminders
+                ? userData.reminders.map((r) => r.title).join(", ")
+                : "No reminders"
+            }
+            
+            - User Preferences: ${
+              userData?.preferences
+                ? `
+                Fitness Goal: ${userData.preferences.fitness_goal}
+                Target Weight: ${userData.preferences.target_weight}kg
+                Weekly Exercise Goal: ${userData.preferences.weekly_exercise_goal}min
+                Daily Calorie Goal: ${userData.preferences.daily_calorie_goal}cal`
+                : "No preferences set"
+            }
+            
+            - Previous AI Recommendations: ${
+              userData?.aiRecommendations
+                ? userData.aiRecommendations.map((r) => r.content).join(" | ")
+                : "No previous recommendations"
+            }
+            
+            - Previous context summary: ${summarizeEarlierMessages(
+              earlierMessages
+            )}`,
+            },
+            ...lastFiveMessages, // Include last 5 messages in full
+          ];
+
+          function calculateAge(birthDate) {
+            if (!birthDate) return "Unknown";
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (
+              monthDiff < 0 ||
+              (monthDiff === 0 && today.getDate() < birth.getDate())
+            ) {
+              age--;
+            }
+            return age;
+          }
+
+          // Call Gemini API with enhanced context
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: JSON.stringify(conversationContext),
+                      },
+                    ],
+                  },
+                ],
+              }),
+            }
+          );
+
+          const data = await response.json();
+          loadingDiv.remove();
+
+          if (data.candidates && data.candidates[0].content.parts[0].text) {
+            let aiResponse = data.candidates[0].content.parts[0].text; // Change to let
+
+            // Add AI response to memory with timestamp
+            memory.push({
+              role: "assistant",
+              content: aiResponse,
+              timestamp: new Date().toISOString(),
+            });
+
+            // Check if response contains activity suggestions
+            const activityCategories = {
+              exercise: [
+                "lari",
+                "jogging",
+                "bersepeda",
+                "yoga",
+                "senam",
+                "olahraga",
+                "jalan kaki",
+                "peregangan",
+              ],
+              nutrition: [
+                "makan sayur",
+                "minum air",
+                "sarapan",
+                "buah",
+                "diet",
+                "nutrisi",
+                "minum",
+              ],
+              wellness: [
+                "meditasi",
+                "cek tekanan darah",
+                "cek berat badan",
+                "istirahat",
+                "relaksasi",
+              ],
+              sleep: ["tidur", "istirahat malam", "tidur siang"],
+            };
+
+            const activityRegex = /{([^}]+)}/g; // Matches text within curly braces
+            let detectedActivities = [];
+
+            const matches = [...aiResponse.matchAll(activityRegex)];
+            if (matches.length > 0) {
+              for (const match of matches) {
+                const activityName = match[1].trim(); // Get text within curly braces
+
+                // Determine category based on activity name
+                let category = "exercise"; // default category
+                for (const [cat, keywords] of Object.entries(
+                  activityCategories
+                )) {
+                  if (
+                    keywords.some((keyword) =>
+                      activityName.toLowerCase().includes(keyword.toLowerCase())
+                    )
+                  ) {
+                    category = cat;
+                    break;
+                  }
+                }
+
+                detectedActivities.push({
+                  name: activityName,
+                  category: category,
+                });
+              }
+            }
+
+            // Add detected activities to journal
+            if (detectedActivities.length > 0) {
+              const addedActivities = [];
+              for (const activity of detectedActivities) {
+                const success = await addActivityToJournal(activity.name);
+                if (success) {
+                  addedActivities.push(activity.name);
+                }
+              }
+
+              // Add confirmation message to AI response
+              if (addedActivities.length > 0) {
+                aiResponse =
+                  aiResponse +
+                  `\n\n✅ Aku sudah menambahkan aktivitas berikut ke jurnalmu:\n${addedActivities
+                    .map((a) => `- ${a}`)
+                    .join("\n")}`;
+              }
+            }
+
+            saveMemory(memory);
+            addMessageToChat(aiResponse, "ai");
+          } else {
+            throw new Error("Invalid response from API");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          loadingDiv.remove();
+          addMessageToChat(
+            "Maaf, ada kesalahan teknis. Coba lagi ya! 🙏",
+            "ai"
+          );
+        }
+      }
+
+      function summarizeEarlierMessages(messages) {
+        if (!messages.length) return "No earlier context available";
+
+        const topics = messages
+          .map((msg) => msg.content.slice(0, 50) + "...")
+          .slice(-3);
+        return `Earlier topics discussed: ${topics.join(" | ")}`;
+      }
+
+      async function addActivityToJournal(activityName, category = "exercise") {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) throw new Error("User not authenticated");
+
+          const { error } = await supabase.from("exercise_logs").insert([
+            {
+              user_id: user.id,
+              exercise_type: activityName,
+              duration_minutes: 30, // Default duration
+              logged_at: new Date().toISOString(),
+              // Hapus category karena tidak ada di tabel
+            },
+          ]);
+
+          if (error) throw error;
+
+          return true;
+        } catch (error) {
+          console.error("Error adding activity to journal:", error);
+          return false;
+        }
+      }
+
+      function addMessageToChat(message, sender) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat-bubble", `${sender}-message`);
+
+        if (sender === "ai") {
+          messageDiv.textContent = ""; // Start empty for typing effect
+          typeText(messageDiv, message);
+        } else {
+          messageDiv.textContent = message;
+        }
+
+        addCopyButton(messageDiv, message);
+        chatContainer.appendChild(messageDiv);
+        scrollToBottom();
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          if (!supabase) {
+            throw new Error("Supabase client not initialized");
+          }
+
+          const {
+            data: { user },
+            error: authError,
+          } = await auth.getUser();
+          if (authError) throw authError;
+
+          let greeting = "Hai! Aku Amanda, asisten kesehatan personalmu. 👋\n";
+
+          if (user) {
+            try {
+              const { data, error: dbError } = await db.healthMetrics.getLatest(
+                user.id
+              );
+              if (dbError) throw dbError;
+
+              if (!data || data.length === 0) {
+                greeting +=
+                  "\nSaat ini kamu belum mengisi data kesehatan sama sekali. Yuk, isi dulu supaya aku bisa kasih saran yang lebih personal! 😊";
+              } else {
+                greeting +=
+                  "\nAku siap membantu menjawab pertanyaan seputar kesehatanmu! 🏥";
+              }
+            } catch (dbError) {
+              console.error("Database error:", dbError);
+              greeting +=
+                "\nMaaf, ada masalah teknis dalam membaca data kesehatanmu. 🙏";
+            }
+          } else {
+            greeting +=
+              "\nSilakan login dulu ya supaya aku bisa memberikan saran yang lebih personal! 😊";
+          }
+
+          addMessageToChat(greeting, "ai");
+        } catch (error) {
+          console.error("Initialization error:", error);
+          addMessageToChat(
+            "Maaf, ada masalah teknis. Silakan refresh halaman ini. 🙏",
+            "ai"
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

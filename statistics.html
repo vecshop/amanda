@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Statistik Kesehatan - HealthTrack</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#7CB9E8" />
+    <link rel="icon" type="image/x-icon" href="/icons/logo64.ico" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="HealthTrack" />
+    <link rel="apple-touch-icon" href="/icons/logo256.ico" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        --primary-color: #7cb9e8; /* Pastel Blue */
+        --secondary-color: #b4e6b0; /* Pastel Green */
+        --accent-color: #ffb7b2; /* Pastel Pink */
+        --warning-color: #ffd8b1; /* Pastel Orange */
+        --info-color: #b5b9ff; /* Pastel Purple */
+        --bg-color: #f0f4f8; /* Light Blue Gray */
+        --card-hover: rgba(124, 185, 232, 0.1);
+      }
+
+      /* Base Styles */
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: var(--bg-color);
+        padding-bottom: calc(76px + 1rem) !important;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+      }
+
+      /* Navbar Enhancement */
+      .navbar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        ) !important;
+        border-radius: 0 0 1.5rem 1.5rem;
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 1.5rem;
+        height: auto;
+      }
+
+      .navbar .container-fluid {
+        padding: 0 0.5rem;
+      }
+
+      .navbar * {
+        color: white !important;
+      }
+
+      .navbar-brand {
+        font-size: 1.25rem !important;
+        font-weight: 600;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .navbar img {
+        height: 32px;
+        width: auto;
+      }
+
+      .navbar .btn {
+        padding: 0.375rem;
+        font-size: 1.25rem;
+        line-height: 1;
+        color: white !important;
+      }
+
+      #notificationBadge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+      }
+
+      .navbar .d-flex {
+        gap: 0.5rem;
+      }
+
+      /* BMI Calculator Button Enhancement */
+      #calculateBMIBtn {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        );
+        border: none;
+        border-radius: 1rem;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      #calculateBMIBtn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Stats Cards Enhancement */
+      .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stat-card:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        transition: all 0.3s ease;
+      }
+
+      .stat-value:hover {
+        transform: scale(1.1);
+      }
+
+      /* Time Filter Enhancement */
+      .btn-group {
+        background: white;
+        padding: 0.25rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-group .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+      }
+
+      .btn-check:checked + .btn {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        );
+        border: none;
+        color: white;
+        transform: scale(1.05);
+        font-weight: 500;
+      }
+
+      .btn-outline-primary {
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      /* Reset Button Enhancement */
+      .btn-outline-danger {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .btn-outline-danger:hover {
+        background: var(--accent-color);
+        border-color: var(--accent-color);
+        transform: none;
+      }
+
+      .btn-outline-danger i {
+        font-size: 0.875rem;
+      }
+
+      /* Container adjustment */
+      .filter-container {
+        background: var(--bg-color);
+        padding: 0.5rem;
+        border-radius: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      /* Charts Enhancement */
+      .chart-container {
+        background: white;
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        margin: 1rem 0;
+      }
+
+      .chart-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Health Metrics Enhancement */
+      .metric-card {
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .metric-card.good {
+        background: linear-gradient(135deg, var (--secondary-color), #8ed1a4);
+      }
+
+      .metric-card.warning {
+        background: linear-gradient(135deg, var(--warning-color), #ffb347);
+      }
+
+      .metric-card.alert {
+        background: linear-gradient(135deg, var(--accent-color), #ff8b8b);
+      }
+
+      /* Location Card Enhancement */
+      .location-card {
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .location-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--bg-color);
+        transition: all 0.3s ease;
+      }
+
+      .location-icon:hover {
+        transform: rotate(15deg);
+        background: var(--primary-color);
+        color: white;
+      }
+
+      /* Modal Enhancement */
+      .modal-content {
+        border-radius: 1.5rem;
+        border: none;
+        overflow: hidden;
+      }
+
+      .modal-header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        );
+        color: white;
+        border: none;
+      }
+
+      .modal-title {
+        color: white;
+        font-weight: bold;
+      }
+
+      .btn-close {
+        filter: brightness(0) invert(1);
+      }
+
+      /* Form Controls Enhancement */
+      .form-control {
+        border-radius: 1rem;
+        border: 2px solid transparent;
+        background: var(--bg-color);
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(124, 185, 232, 0.25);
+      }
+
+      /* Animation Classes */
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      .slide-up {
+        animation: slideUp 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* BMI Category Labels */
+      .bmi-category {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+      }
+
+      .bmi-category:hover {
+        transform: scale(1.05);
+      }
+
+      /* Footer Nav Enhancement */
+      .footer-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 1.5rem 1.5rem 0 0;
+        padding: 1rem 0;
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
+        z-index: 1000;
+      }
+
+      .footer-nav a {
+        color: #666666;
+        text-decoration: none;
+        font-size: 0.875rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .footer-nav a:before {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 3px;
+        background: var(--primary-color);
+        transition: width 0.3s ease;
+        border-radius: 3px;
+      }
+
+      .footer-nav a.active:before {
+        width: 20px;
+      }
+
+      .footer-nav a.active {
+        color: var(--primary-color);
+      }
+
+      .footer-nav i {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+        transition: all 0.3s ease;
+      }
+
+      .footer-nav a:hover {
+        color: var(--primary-color);
+      }
+
+      .footer-nav a:hover i {
+        transform: translateY(-2px);
+      }
+
+      /* Ensure content doesn't get hidden behind footer */
+      body {
+        padding-bottom: calc(76px + 1rem) !important;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Add smooth scroll behavior */
+      html {
+        scroll-behavior: smooth;
+        height: 100%;
+        width: 100%;
+      }
+
+      /* Ensure modals appear above footer */
+      .modal {
+        z-index: 1060;
+      }
+
+      .modal-backdrop {
+        z-index: 1050;
+      }
+
+      /* Fix horizontal overflow */
+      html,
+      body {
+        max-width: 100%;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Update container padding */
+      .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Update navbar container */
+      .navbar .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      /* Update footer nav container */
+      .footer-nav .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+      }
+
+      /* Update chart container responsiveness */
+      .chart-container {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Update modal responsiveness */
+      .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+      }
+
+      @media (min-width: 576px) {
+        .modal-dialog {
+          max-width: 500px;
+          margin: 1.75rem auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <nav class="navbar navbar-light bg-white shadow-sm">
+      <div class="container-fluid">
+        <div class="d-flex align-items-center">
+          <img src="icons/logo.png" alt="HealthTrack Logo" class="me-2" />
+          <h1 class="navbar-brand mb-0">Statistik Kesehatan</h1>
+        </div>
+        <div class="d-flex align-items-center">
+          <button id="notificationBtn" class="btn position-relative">
+            <i class="bi bi-bell-fill"></i>
+            <span
+              id="notificationBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+            >
+              3
+            </span>
+          </button>
+          <a id="aiBtn" class="btn" href="ai_amanda.html">
+            <i class="bi bi-robot"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-4">
+      <!-- BMI Calculator Button -->
+      <button
+        id="calculateBMIBtn"
+        class="btn btn-amanda w-100 mb-4 py-2 fade-in"
+      >
+        <i class="bi bi-calculator me-2"></i>
+        Hitung BMI
+      </button>
+
+      <!-- Summary Cards -->
+      <div class="row g-3 mb-4 slide-up">
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <p class="text-secondary small mb-1">BMI</p>
+            <h3 class="h4 fw-bold mb-0" id="bmiValue">--</h3>
+            <p class="text-secondary small" id="bmiCategory">Loading...</p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <p class="text-secondary small mb-1">Berat</p>
+            <h3 class="h4 fw-bold mb-0" id="weightValue">-- kg</h3>
+            <p class="text-secondary small">
+              Target: <span id="weightTarget">-- kg</span>
+            </p>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <p class="text-secondary small mb-1">Tinggi</p>
+            <h3 class="h4 fw-bold mb-0" id="heightValue">-- cm</h3>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <p class="text-secondary small mb-1">Aktivitas</p>
+            <h3 class="h4 fw-bold mb-0" id="activityScore">--</h3>
+            <p class="text-secondary small">dari target 100</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Replace the filter buttons section with -->
+
+      <div
+        class="filter-container d-flex justify-content-between align-items-center"
+      >
+        <div class="btn-group" role="group" aria-label="Time filter">
+          <input
+            type="radio"
+            class="btn-check"
+            name="timeFilter"
+            id="today"
+            value="today"
+            checked
+          />
+          <label class="btn btn-outline-primary" for="today">Hari Ini</label>
+
+          <input
+            type="radio"
+            class="btn-check"
+            name="timeFilter"
+            id="week"
+            value="week"
+          />
+          <label class="btn btn-outline-primary" for="week">Minggu</label>
+
+          <input
+            type="radio"
+            class="btn-check"
+            name="timeFilter"
+            id="month"
+            value="month"
+          />
+          <label class="btn btn-outline-primary" for="month">Bulan</label>
+
+          <input
+            type="radio"
+            class="btn-check"
+            name="timeFilter"
+            id="year"
+            value="year"
+          />
+          <label class="btn btn-outline-primary" for="year">Tahun</label>
+        </div>
+
+        <button
+          class="btn btn-outline-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#resetModal"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Reset
+        </button>
+      </div>
+
+      <!-- Charts -->
+      <div class="row g-4 mb-4 fade-in">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Tren Berat Badan</h5>
+              <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Tren BMI</h5>
+              <div class="chart-container">
+                <canvas id="activityChart"></canvas>
+              </div>
+              <div class="mt-2">
+                <div
+                  class="d-flex justify-content-between small text-secondary"
+                >
+                  <span>Kurang (&lt;18.5)</span>
+                  <span>Normal (18.5-24.9)</span>
+                  <span>Lebih (25-29.9)</span>
+                  <span>Obesitas (≥30)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Metrics -->
+      <h5 class="mb-3">Metrik Kesehatan</h5>
+      <div id="healthMetrics" class="slide-up"></div>
+
+      <!-- AMANDA Location -->
+      <div class="card mt-4 fade-in">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Lokasi AMANDA Terdekat</h5>
+            <button id="findNearestBtn" class="btn btn-link text-primary p-0">
+              <i class="bi bi-geo-alt me-1"></i>
+              Cari Lokasi Terdekat
+            </button>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-circle">
+              <i class="bi bi-geo-alt-fill text-primary fs-4"></i>
+            </div>
+            <div>
+              <h6 class="mb-1">MAN 1 Selong</h6>
+              <p class="text-secondary small mb-0">
+                Jl. Pejanggik No.8, Selong, Kec. Selong, Kabupaten Lombok Timur
+              </p>
+            </div>
+          </div>
+
+          <div class="ratio ratio-16x9 mb-3">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3343.4755466384554!2d116.5356548742215!3d-8.65567858806038!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dcdc0a978718a85%3A0x60a55374a5a55af6!2sMAN%201%20Selong!5e1!3m2!1sid!2sid!4v1740746743605!5m2!1sid!2sid"
+              style="border: 0"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            >
+            </iframe>
+          </div>
+
+          <div class="row g-2">
+            <div class="col">
+              <a
+                href="https://maps.google.com/maps?q=MAN+1+Selong"
+                target="_blank"
+                class="btn btn-amanda w-100"
+              >
+                <i class="bi bi-map me-2"></i>
+                Buka di Maps
+              </a>
+            </div>
+            <div class="col">
+              <button
+                class="btn btn-outline-primary w-100"
+                onclick="navigator.share({
+                                    title: 'Lokasi AMANDA di MAN 1 Selong',
+                                    text: 'Temukan AMANDA - Alat Pengukur BMI Digital di MAN 1 Selong',
+                                    url: 'https://maps.google.com/maps?q=MAN+1+Selong'
+                                })"
+              >
+                <i class="bi bi-share me-2"></i>
+                Bagikan Lokasi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Navigation -->
+    <nav class="footer-nav">
+      <div class="container">
+        <div class="row text-center g-0">
+          <div class="col">
+            <a href="index.html">
+              <i class="bi bi-house-fill"></i>
+              <span>Beranda</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="statistics.html" class="active">
+              <i class="bi bi-bar-chart-fill"></i>
+              <span>Statistik</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="jurnal.html">
+              <i class="bi bi-journal-text"></i>
+              <span>Jurnal</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="#">
+              <i class="bi bi-people-fill"></i>
+              <span>Komunitas</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="profile.html">
+              <i class="bi bi-person-fill"></i>
+              <span>Profil</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- BMI Modal -->
+    <div class="modal fade" id="bmiModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Kalkulator BMI</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="bmiForm">
+              <div class="mb-3">
+                <label class="form-label">Jenis Kelamin</label>
+                <div class="d-flex gap-3">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="gender"
+                      value="male"
+                      checked
+                    />
+                    <label class="form-check-label">Laki-laki</label>
+                  </div>
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="gender"
+                      value="female"
+                    />
+                    <label class="form-check-label">Perempuan</label>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Umur</label>
+                <input
+                  type="number"
+                  name="age"
+                  class="form-control"
+                  required
+                  min="1"
+                  max="120"
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Tinggi Badan (cm)</label>
+                <input
+                  type="number"
+                  name="height"
+                  class="form-control"
+                  required
+                  min="100"
+                  max="250"
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Berat Badan (kg)</label>
+                <input
+                  type="number"
+                  name="weight"
+                  class="form-control"
+                  required
+                  min="30"
+                  max="200"
+                />
+              </div>
+              <button type="submit" class="btn btn-amanda w-100">
+                Hitung BMI
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Reset Confirmation Modal before closing body tag -->
+    <div class="modal fade" id="resetModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Reset Data Metrik</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-danger">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Peringatan: Tindakan ini akan menghapus seluruh data metrik
+              kesehatan Anda dan tidak dapat dikembalikan.
+            </p>
+            <p>Apakah Anda yakin ingin melanjutkan?</p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Batal
+            </button>
+            <button type="button" class="btn btn-danger" id="confirmResetBtn">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset Data
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registered:', registration);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+      </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="module">
+      import { supabase, auth, db } from "./supabase.js";
+
+      function initializeBMICalculator() {
+        const bmiModalEl = document.getElementById("bmiModal");
+        const calculateBtn = document.getElementById("calculateBMIBtn");
+        const form = document.getElementById("bmiForm");
+
+        // Initialize modal
+        const bmiModal = new bootstrap.Modal(bmiModalEl);
+
+        // Handle modal close
+        bmiModalEl.addEventListener("hidden.bs.modal", () => {
+          // Remove modal-related classes and elements
+          document.body.classList.remove("modal-open");
+          document.body.style.overflow = "";
+          document.body.style.paddingRight = "";
+
+          const backdrop = document.querySelector(".modal-backdrop");
+          if (backdrop) {
+            backdrop.remove();
+          }
+        });
+
+        calculateBtn.addEventListener("click", () => {
+          bmiModal.show();
+        });
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const weight = parseFloat(formData.get("weight"));
+          const height = parseFloat(formData.get("height")); // Keep in cm
+          const age = parseInt(formData.get("age"));
+          const gender = formData.get("gender");
+
+          // Calculate BMI (weight in kg / (height in m)²)
+          const heightInMeter = height / 100;
+          const bmi = weight / (heightInMeter * heightInMeter);
+
+          // Determine BMI category
+          let bmi_category;
+          if (bmi < 18.5) {
+            bmi_category = "underweight";
+          } else if (bmi < 25) {
+            bmi_category = "normal";
+          } else if (bmi < 30) {
+            bmi_category = "overweight";
+          } else {
+            bmi_category = "obese";
+          }
+
+          try {
+            const {
+              data: { user },
+            } = await auth.getUser();
+            if (user) {
+              const healthData = {
+                user_id: user.id,
+                weight,
+                height,
+                bmi: parseFloat(bmi.toFixed(1)),
+                bmi_category,
+                recorded_at: new Date().toISOString(),
+              };
+
+              const { error } = await db.healthMetrics.create(healthData);
+              if (error) throw error;
+
+              // Update UI
+              updateMetrics(healthData);
+
+              // Close modal and reset form
+              bmiModal.hide();
+              form.reset();
+
+              // Ensure proper cleanup after modal closes
+              document.body.classList.remove("modal-open");
+              document.body.style.overflow = "";
+              document.body.style.paddingRight = "";
+              const backdrop = document.querySelector(".modal-backdrop");
+              if (backdrop) {
+                backdrop.remove();
+              }
+
+              // Reload charts with new data
+              const activeFilter = document.querySelector(
+                'input[name="timeFilter"]:checked'
+              ).value;
+              await loadChartData(activeFilter);
+            }
+          } catch (error) {
+            console.error("Error saving BMI data:", error);
+            alert("Terjadi kesalahan saat menyimpan data. Silakan coba lagi.");
+          }
+        });
+      }
+
+      // Add location functionality
+      function initializeLocation() {
+        const findNearestBtn = document.getElementById("findNearestBtn");
+
+        findNearestBtn.addEventListener("click", async () => {
+          try {
+            const position = await getCurrentPosition();
+            const { latitude, longitude } = position.coords;
+
+            // Here you would typically:
+            // 1. Call your backend API to find nearest AMANDA locations
+            // 2. Update the map with user's location and nearest devices
+            // For now, we'll just show an alert
+            alert(
+              `Lokasi Anda:\nLatitude: ${latitude}\nLongitude: ${longitude}\n\nAMANDA terdekat: MAN 1 Selong (2.5 km)`
+            );
+          } catch (error) {
+            alert(
+              "Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin lokasi diberikan."
+            );
+          }
+        });
+      }
+
+      function getCurrentPosition() {
+        return new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+      }
+
+      // Add notification functionality
+      function initializeNotifications() {
+        const badge = document.getElementById("notificationBadge");
+        const notificationBtn = document.getElementById("notificationBtn");
+
+        notificationBtn.addEventListener("click", () => {
+          alert(
+            "Notifikasi:\n- Waktunya minum air!\n- Jadwal olahraga hari ini pukul 17:00\n- Laporan kesehatan mingguan Anda siap"
+          );
+          badge.textContent = "0";
+          badge.classList.add("hidden");
+        });
+      }
+
+      // Replace the initializeCharts function with:
+
+      async function initializeCharts() {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) return;
+
+          // Initial chart load with today's data
+          await loadChartData("today");
+        } catch (error) {
+          console.error("Error initializing charts:", error);
+        }
+      }
+
+      // Load user's health metrics
+      async function loadHealthMetrics(userId) {
+        try {
+          const { data, error } = await db.healthMetrics.getLatest(userId);
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            // Periksa array data
+            updateMetrics(data[0]); // Ambil item pertama dari array
+          } else {
+            // Set default values jika tidak ada data
+            updateMetrics({
+              bmi: null,
+              weight: "--",
+              height: "--",
+              activity_score: "--",
+              bmi_category: "normal",
+            });
+          }
+        } catch (error) {
+          console.error("Error loading health metrics:", error);
+        }
+      }
+
+      // Update metrics display
+      function updateMetrics(data) {
+        // Update summary cards
+        document.getElementById("bmiValue").textContent =
+          data.bmi?.toFixed(1) || "--";
+        document.getElementById(
+          "weightValue"
+        ).textContent = `${data.weight} kg`;
+        document.getElementById(
+          "heightValue"
+        ).textContent = `${data.height} cm`;
+        document.getElementById("activityScore").textContent =
+          data.activity_score || "--";
+
+        // Update BMI category with Bootstrap classes
+        const bmiCategory = document.getElementById("bmiCategory");
+        if (data.bmi < 18.5) {
+          bmiCategory.textContent = "Berat Badan Kurang";
+          bmiCategory.className = "text-primary small";
+        } else if (data.bmi < 25) {
+          bmiCategory.textContent = "Normal";
+          bmiCategory.className = "text-success small";
+        } else if (data.bmi < 30) {
+          bmiCategory.textContent = "Berat Badan Lebih";
+          bmiCategory.className = "text-warning small";
+        } else {
+          bmiCategory.textContent = "Obesitas";
+          bmiCategory.className = "text-danger small";
+        }
+
+        // Update health metrics cards with Bootstrap classes
+        const healthMetricsContainer = document.getElementById("healthMetrics");
+        healthMetricsContainer.innerHTML = `
+        <div class="metric-card ${data.blood_pressure_category || "good"}">
+            <h4 class="fw-medium">Tekanan Darah</h4>
+            <p class="display-6 fw-bold">${data.systolic}/${data.diastolic}</p>
+            <p class="text-secondary small">mmHg</p>
+        </div>
+        <div class="metric-card ${data.heart_rate_category || "good"}">
+            <h4 class="fw-medium">Detak Jantung</h4>
+            <p class="display-6 fw-bold">${data.heart_rate}</p>
+            <p class="text-secondary small">bpm</p>
+        </div>
+        <div class="metric-card ${data.sleep_category || "warning"}">
+            <h4 class="fw-medium">Durasi Tidur</h4>
+            <p class="display-6 fw-bold">${data.sleep_hours}</p>
+            <p class="text-secondary small">jam</p>
+        </div>
+    `;
+      }
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const {
+            data: { user },
+            error,
+          } = await auth.getUser();
+          if (error || !user) {
+            window.location.href = "signup.html";
+            return;
+          }
+
+          initializeLocation();
+          initializeCharts();
+          await loadHealthMetrics(user.id);
+          initializeBMICalculator();
+          initializeNotifications();
+        } catch (error) {
+          console.error("Error initializing statistics page:", error);
+        }
+      });
+
+      // Add these functions to your existing script section
+
+      let weightChart = null;
+      let bmiChart = null;
+
+      // Function to get date range based on filter
+      function getDateRange(filter) {
+        const now = new Date();
+        const start = new Date();
+
+        switch (filter) {
+          case "today":
+            start.setHours(0, 0, 0, 0);
+            break;
+          case "week":
+            start.setDate(now.getDate() - 7);
+            break;
+          case "month":
+            start.setMonth(now.getMonth() - 1);
+            break;
+          case "year":
+            start.setFullYear(now.getFullYear() - 1);
+            break;
+        }
+
+        return { start, end: now };
+      }
+
+      // Function to format dates for chart labels
+      function formatDate(date, filter) {
+        switch (filter) {
+          case "today":
+            return date.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          case "week":
+            return date.toLocaleDateString("id-ID", { weekday: "short" });
+          case "month":
+            return date.toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+            });
+          case "year":
+            return date.toLocaleDateString("id-ID", {
+              month: "short",
+              year: "2-digit",
+            });
+        }
+      }
+
+      // Updated loadChartData function
+      async function loadChartData(filter = "today") {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) return;
+
+          const dateRange = getDateRange(filter);
+
+          const { data, error } = await supabase
+            .from("health_metrics")
+            .select("weight, bmi, recorded_at")
+            .eq("user_id", user.id)
+            .gte("recorded_at", dateRange.start.toISOString())
+            .lte("recorded_at", dateRange.end.toISOString())
+            .order("recorded_at", { ascending: true });
+
+          if (error) throw error;
+
+          const labels = data.map((d) =>
+            formatDate(new Date(d.recorded_at), filter)
+          );
+          const weights = data.map((d) => d.weight);
+          const bmis = data.map((d) => d.bmi);
+
+          updateCharts(labels, weights, bmis);
+        } catch (error) {
+          console.error("Error loading chart data:", error);
+        }
+      }
+
+      // Function to update charts
+      async function updateCharts(labels, weights, bmis) {
+        const commonOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 750,
+            easing: "easeInOutQuart",
+          },
+        };
+
+        // Weight Chart
+        const weightCtx = document.getElementById("weightChart");
+        if (weightChart) {
+          weightChart.destroy();
+        }
+        weightChart = new Chart(weightCtx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Berat (kg)",
+                data: weights,
+                borderColor: "#4a90e2",
+                tension: 0.4,
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            ...commonOptions,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    return `Berat: ${context.raw} kg`;
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: "Berat (kg)",
+                },
+              },
+            },
+          },
+        });
+
+        // BMI Chart
+        const bmiCtx = document.getElementById("activityChart");
+        if (bmiChart) {
+          bmiChart.destroy();
+        }
+        bmiChart = new Chart(bmiCtx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "BMI",
+                data: bmis,
+                borderColor: "#62c370",
+                backgroundColor: "rgba(98, 195, 112, 0.1)",
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            ...commonOptions,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const bmi = context.raw;
+                    let category = "";
+                    if (bmi < 18.5) category = "Berat Badan Kurang";
+                    else if (bmi < 25) category = "Normal";
+                    else if (bmi < 30) category = "Berat Badan Lebih";
+                    else category = "Obesitas";
+                    return [`BMI: ${bmi}`, `Kategori: ${category}`];
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: "BMI",
+                },
+                grid: {
+                  color: function (context) {
+                    if (
+                      context.tick.value === 18.5 ||
+                      context.tick.value === 25 ||
+                      context.tick.value === 30
+                    ) {
+                      return "rgba(255, 0, 0, 0.2)";
+                    }
+                    return "rgba(0, 0, 0, 0.1)";
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Add real-time subscription
+      function subscribeToMetrics(userId) {
+        const subscription = supabase
+          .channel("health_metrics_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "health_metrics",
+              filter: `user_id=eq.${userId}`,
+            },
+            () => {
+              const activeFilter = document.querySelector(
+                'input[name="timeFilter"]:checked'
+              ).value;
+              loadChartData(activeFilter);
+            }
+          )
+          .subscribe();
+
+        return subscription;
+      }
+
+      // Add reset functionality
+      async function resetMetricsData(userId) {
+        try {
+          const { error } = await supabase
+            .from("health_metrics")
+            .delete()
+            .eq("user_id", userId);
+
+          if (error) throw error;
+
+          // Clear charts
+          weightChart?.destroy();
+          bmiChart?.destroy();
+          weightChart = null;
+          bmiChart = null;
+
+          // Reset metrics display
+          updateMetrics({
+            bmi: null,
+            weight: "--",
+            height: "--",
+            activity_score: "--",
+          });
+
+          // Reload charts
+          await loadChartData("today");
+        } catch (error) {
+          console.error("Error resetting metrics:", error);
+          alert("Gagal menghapus data. Silakan coba lagi.");
+        }
+      }
+
+      // Update the document.addEventListener section
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const {
+            data: { user },
+          } = await auth.getUser();
+          if (!user) {
+            window.location.href = "signup.html";
+            return;
+          }
+
+          // Initialize components in order
+          initializeLocation();
+          initializeBMICalculator();
+          initializeNotifications();
+          await loadHealthMetrics(user.id);
+          await initializeCharts(); // This will now use loadChartData internally
+
+          // Subscribe to real-time updates
+          const subscription = subscribeToMetrics(user.id);
+
+          // Add time filter listeners
+          document
+            .querySelectorAll('input[name="timeFilter"]')
+            .forEach((radio) => {
+              radio.addEventListener("change", (e) => {
+                loadChartData(e.target.value);
+              });
+            });
+
+          // Add reset confirmation listener
+          document
+            .getElementById("confirmResetBtn")
+            .addEventListener("click", async () => {
+              await resetMetricsData(user.id);
+              const modal = bootstrap.Modal.getInstance(
+                document.getElementById("resetModal")
+              );
+              modal.hide();
+            });
+
+          // Cleanup subscription on page unload
+          window.addEventListener("beforeunload", () => {
+            subscription.unsubscribe();
+          });
+        } catch (error) {
+          console.error("Error initializing statistics page:", error);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - HealthTrack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#7CB9E8" />
+    <link rel="icon" type="image/x-icon" href="/icons/logo64.ico" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="HealthTrack" />
+    <link rel="apple-touch-icon" href="/icons/logo256.ico" />
+  </head>
+  <body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center px-4">
+      <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+        <!-- Logo -->
+        <div class="text-center">
+          <img
+            src="https://www.freeiconspng.com/thumbs/medical-icon-png/health-insurance-icon-png-3.png"
+            alt="HealthTrack Logo"
+            class="mx-auto h-12 w-auto"
+          />
+          <h2 class="mt-6 text-3xl font-bold text-gray-900">HealthTrack</h2>
+          <p class="mt-2 text-sm text-gray-600">Masuk ke akun Anda</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="mt-8 space-y-6">
+          <div class="rounded-md shadow-sm space-y-4">
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700"
+                >Email</label
+              >
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label
+                for="password"
+                class="block text-sm font-medium text-gray-700"
+                >Password</label
+              >
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <input
+                id="remember"
+                name="remember"
+                type="checkbox"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="remember" class="ml-2 block text-sm text-gray-900"
+                >Ingat saya</label
+              >
+            </div>
+
+            <div class="text-sm">
+              <button
+                type="button"
+                id="forgotPasswordBtn"
+                class="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Lupa password?
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Masuk
+            </button>
+          </div>
+        </form>
+
+        <!-- Sign Up Link -->
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            Belum punya akun?
+            <a
+              href="signup.html"
+              class="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Daftar disini
+            </a>
+          </p>
+        </div>
+
+        <!-- Error Alert -->
+        <div
+          id="errorAlert"
+          class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+          role="alert"
+        >
+          <span id="errorMessage" class="block sm:inline"></span>
+        </div>
+      </div>
+    </div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registered:', registration);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+      </script>
+
+    <script type="module">
+      import { supabase, auth } from "./supabase.js";
+
+      const loginForm = document.getElementById("loginForm");
+      const errorAlert = document.getElementById("errorAlert");
+      const errorMessage = document.getElementById("errorMessage");
+      const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
+
+      // Check if user is already logged in
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          const {
+            data: { user },
+            error,
+          } = await auth.getUser();
+          if (user && !error) {
+            window.location.href = "index.html";
+          }
+        } catch (error) {
+          console.error("Session check error:", error);
+        }
+      });
+
+      // Handle login form submission
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const rememberMe = document.getElementById("remember").checked;
+
+        try {
+          // Disable submit button
+          const submitButton = loginForm.querySelector('button[type="submit"]');
+          submitButton.disabled = true;
+          submitButton.textContent = "Masuk...";
+
+          // Attempt to sign in
+          const { data, error } = await auth.signIn(email, password);
+
+          if (error) throw error;
+
+          if (data) {
+            // Set session persistence based on "remember me" checkbox
+            if (rememberMe) {
+              localStorage.setItem("rememberUser", "true");
+            } else {
+              localStorage.removeItem("rememberUser");
+            }
+
+            // Redirect to dashboard
+            window.location.href = "index.html";
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          showError(getErrorMessage(error.message));
+        } finally {
+          // Re-enable submit button
+          const submitButton = loginForm.querySelector('button[type="submit"]');
+          submitButton.disabled = false;
+          submitButton.textContent = "Masuk";
+        }
+      });
+
+      // Handle forgot password
+      forgotPasswordBtn.addEventListener("click", async () => {
+        const email = document.getElementById("email").value.trim();
+
+        if (!email) {
+          showError("Masukkan email Anda terlebih dahulu");
+          return;
+        }
+
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email);
+          if (error) throw error;
+
+          alert("Email reset password telah dikirim. Silakan cek inbox Anda.");
+        } catch (error) {
+          console.error("Reset password error:", error);
+          showError("Gagal mengirim email reset password");
+        }
+      });
+
+      // Helper function to show error messages
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorAlert.classList.remove("hidden");
+        setTimeout(() => {
+          errorAlert.classList.add("hidden");
+        }, 5000);
+      }
+
+      // Helper function to translate error messages
+      function getErrorMessage(errorMessage) {
+        const errorMessages = {
+          "Invalid login credentials": "Email atau password salah",
+          "Email not confirmed":
+            "Email belum dikonfirmasi. Silakan cek inbox Anda",
+          "Invalid email or password": "Email atau password salah",
+          "Too many requests":
+            "Terlalu banyak percobaan. Silakan coba lagi nanti",
+        };
+
+        return (
+          errorMessages[errorMessage] || "Terjadi kesalahan. Silakan coba lagi"
+        );
+      }
+    </script>
+  </body>
+</html>
