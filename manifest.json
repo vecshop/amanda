@@ -4,7 +4,7 @@
     "description": "Pemantau Kesehatan dan Aktivitas Personal",
     "start_url": "/index.html",
     "display": "standalone",
-    "background_color": "#ffffff",
+    "background_color": "#4a90e2",
     "theme_color": "#7CB9E8",
     "orientation": "portrait",
     "icons": [
