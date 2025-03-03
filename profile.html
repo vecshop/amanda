@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Profile - HealthTrack</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Replace Tailwind with Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link
       rel="stylesheet"
@@ -17,214 +21,397 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="HealthTrack" />
     <link rel="apple-touch-icon" href="/icons/logo256.ico" />
+
     <style>
-      body {
-        padding-bottom: 4rem;
+      :root {
+        --primary-color: #7cb9e8; /* Pastel Blue */
+        --secondary-color: #b4e6b0; /* Pastel Green */
+        --accent-color: #ffb7b2; /* Pastel Pink */
+        --warning-color: #ffd8b1; /* Pastel Orange */
+        --info-color: #b5b9ff; /* Pastel Purple */
+        --bg-color: #f0f4f8; /* Light Blue Gray */
+        --card-hover: rgba(124, 185, 232, 0.1);
       }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: var(--bg-color);
+        padding-bottom: 76px;
+        transition: all 0.3s ease;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Navbar Enhancement */
+      .navbar {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--info-color)
+        ) !important;
+        border-radius: 0 0 1.5rem 1.5rem;
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 1.5rem;
+        height: auto;
+      }
+
+      .navbar .container-fluid {
+        padding: 0 0.5rem;
+      }
+
+      .navbar * {
+        color: white !important;
+      }
+
+      .navbar-brand {
+        font-size: 1.25rem !important;
+        font-weight: 600;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      /* Profile Image Enhancement */
+      .profile-image-container {
+        position: relative;
+        display: inline-block;
+        margin: 1rem 0;
+      }
+
+      .profile-image {
+        width: 128px;
+        height: 128px;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .change-photo-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .change-photo-btn:hover {
+        transform: scale(1.1);
+        background-color: var(--accent-color);
+      }
+
+      /* Card Enhancement */
+      .card {
+        border: none;
+        border-radius: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .card:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+      }
+
+      /* Form Controls Enhancement */
+      .form-control,
+      .form-select {
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        border: 2px solid transparent;
+        background: var(--bg-color);
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(124, 185, 232, 0.25);
+      }
+
+      /* Button Enhancement */
+      .btn-amanda {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-amanda:hover {
+        background-color: #6ba7d6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(124, 185, 232, 0.3);
+      }
+
+      /* Footer Nav Enhancement */
       .footer-nav {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background-color: white;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        display: flex;
-        justify-content: space-around;
-        padding: 0.75rem 0;
-        z-index: 100;
+        background: white;
+        border-radius: 1.5rem 1.5rem 0 0;
+        padding: 1rem 0;
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
+        z-index: 1000;
       }
-      .footer-nav-item {
+
+      .footer-nav a {
+        color: #666666;
+        text-decoration: none;
+        font-size: 0.875rem;
         display: flex;
         flex-direction: column;
         align-items: center;
-        color: #666666;
-        text-decoration: none;
-        font-size: 0.75rem;
+        position: relative;
+        transition: all 0.3s ease;
       }
-      .footer-nav-item.active {
-        color: #4a90e2;
+
+      .footer-nav a:before {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 3px;
+        background: var(--primary-color);
+        transition: width 0.3s ease;
+        border-radius: 3px;
       }
-      .footer-nav-item i {
-        margin-bottom: 0.25rem;
+
+      .footer-nav a.active:before {
+        width: 20px;
+      }
+
+      .footer-nav a.active {
+        color: var(--primary-color);
+      }
+
+      .footer-nav i {
         font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+        transition: all 0.3s ease;
+      }
+
+      .footer-nav a:hover i {
+        transform: translateY(-2px);
+      }
+
+      /* Alert Enhancement */
+      .alert {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Animation Classes */
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      .slide-up {
+        animation: slideUp 0.5s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
     </style>
   </head>
-  <body class="bg-gray-50">
+  <body>
     <!-- Header -->
     <header class="bg-white shadow-sm">
-      <div class="px-4 py-3">
-        <h1 class="text-xl font-bold text-gray-900">Profil Saya</h1>
+      <div class="container py-3">
+        <h1 class="h4 mb-0 fw-bold">Profil Saya</h1>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 max-w-lg">
+    <main class="container py-4" style="max-width: 540px">
       <!-- Profile Picture Section -->
-      <div class="text-center mb-8">
-        <div class="relative inline-block">
+      <div class="text-center mb-4">
+        <div class="profile-image-container">
           <img
             id="profileImage"
             src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg"
             alt="Profile Picture"
-            class="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+            class="profile-image"
           />
-          <button
-            id="changePhotoBtn"
-            class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 shadow-lg"
-          >
+          <button id="changePhotoBtn" class="change-photo-btn">
             <i class="bi bi-camera-fill"></i>
           </button>
         </div>
       </div>
 
       <!-- Profile Form -->
-      <form id="profileForm" class="space-y-6">
-        <div class="bg-white rounded-lg shadow p-6 space-y-4">
-          <div>
-            <label
-              for="fullName"
-              class="block text-sm font-medium text-gray-700"
-              >Nama Lengkap</label
-            >
+      <form id="profileForm">
+        <div class="card p-4 mb-4">
+          <div class="mb-3">
+            <label for="fullName" class="form-label">Nama Lengkap</label>
             <input
               type="text"
+              class="form-control"
               id="fullName"
               name="fullName"
               required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700"
-              >Email</label
-            >
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
             <input
               type="email"
+              class="form-control"
               id="email"
               name="email"
               required
               disabled
-              class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm"
             />
           </div>
 
-          <div>
-            <label for="gender" class="block text-sm font-medium text-gray-700"
-              >Jenis Kelamin</label
-            >
-            <select
-              id="gender"
-              name="gender"
-              required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
+          <div class="mb-3">
+            <label for="gender" class="form-label">Jenis Kelamin</label>
+            <select class="form-select" id="gender" name="gender" required>
               <option value="male">Laki-laki</option>
               <option value="female">Perempuan</option>
               <option value="other">Lainnya</option>
             </select>
           </div>
 
-          <div>
-            <label
-              for="birthDate"
-              class="block text-sm font-medium text-gray-700"
-              >Tanggal Lahir</label
-            >
+          <div class="mb-3">
+            <label for="birthDate" class="form-label">Tanggal Lahir</label>
             <input
               type="date"
+              class="form-control"
               id="birthDate"
               name="birthDate"
               required
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
-          <div>
-            <label for="phone" class="block text-sm font-medium text-gray-700"
-              >Nomor Telepon</label
-            >
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
+          <div class="mb-3">
+            <label for="phone" class="form-label">Nomor Telepon</label>
+            <input type="tel" class="form-control" id="phone" name="phone" />
           </div>
 
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
+          <button type="submit" class="btn btn-primary w-100">
             Simpan Perubahan
           </button>
         </div>
       </form>
 
       <!-- Additional Actions -->
-      <div class="mt-6 space-y-4">
-        <button
-          id="changePasswordBtn"
-          class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-        >
+      <div class="d-grid gap-2">
+        <button id="changePasswordBtn" class="btn btn-light">
           Ubah Password
         </button>
-
-        <button
-          id="logoutBtn"
-          class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-        >
-          Keluar
-        </button>
+        <button id="logoutBtn" class="btn btn-danger">Keluar</button>
       </div>
 
       <!-- Error Alert -->
-      <div
-        id="errorAlert"
-        class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-        role="alert"
-      >
-        <span id="errorMessage" class="block sm:inline"></span>
+      <div id="errorAlert" class="alert alert-danger mt-3 d-none" role="alert">
+        <span id="errorMessage"></span>
       </div>
     </main>
 
     <!-- Footer Navigation -->
     <nav class="footer-nav">
-      <a href="index.html" class="footer-nav-item">
-        <i class="bi bi-house-fill"></i>
-        <span>Beranda</span>
-      </a>
-      <a href="statistics.html" class="footer-nav-item">
-        <i class="bi bi-bar-chart-fill"></i>
-        <span>Statistik</span>
-      </a>
-      <a href="jurnal.html" class="footer-nav-item">
-        <i class="bi bi-journal-text"></i>
-        <span>Jurnal</span>
-      </a>
-      <a href="#" class="footer-nav-item">
-        <i class="bi bi-people-fill"></i>
-        <span>Komunitas</span>
-      </a>
-      <a href="profile.html" class="footer-nav-item active">
-        <i class="bi bi-person-fill"></i>
-        <span>Profil</span>
-      </a>
+      <div class="container">
+        <div class="row text-center g-0">
+          <div class="col">
+            <a href="index.html">
+              <i class="bi bi-house-fill"></i>
+              <span>Beranda</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="statistics.html">
+              <i class="bi bi-bar-chart-fill"></i>
+              <span>Statistik</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="jurnal.html">
+              <i class="bi bi-journal-text"></i>
+              <span>Jurnal</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="#">
+              <i class="bi bi-people-fill"></i>
+              <span>Komunitas</span>
+            </a>
+          </div>
+          <div class="col">
+            <a href="profile.html" class="active">
+              <i class="bi bi-person-fill"></i>
+              <span>Profil</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </nav>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Keep the existing scripts -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('ServiceWorker registered:', registration);
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log("ServiceWorker registered:", registration);
             })
-            .catch(error => {
-              console.log('ServiceWorker registration failed:', error);
+            .catch((error) => {
+              console.log("ServiceWorker registration failed:", error);
             });
         });
       }
-      </script>
+    </script>
 
     <script type="module">
       import { supabase, auth } from "./supabase.js";
