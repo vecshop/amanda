@@ -890,15 +890,25 @@
             confirm(`Hapus ${selectedActivities.length} aktivitas terpilih?`)
           ) {
             try {
-              const { error } = await supabase
+              // First, delete or update associated reminders
+              const { error: reminderError } = await supabase
+                .from("reminders")
+                .delete()
+                .in("exercise_log_id", selectedActivities);
+
+              if (reminderError) throw reminderError;
+
+              // Then delete the exercise logs
+              const { error: exerciseError } = await supabase
                 .from("exercise_logs")
                 .delete()
                 .in("id", selectedActivities);
 
-              if (error) throw error;
+              if (exerciseError) throw exerciseError;
 
               await loadActivities();
               editModeBtn.click(); // Exit edit mode
+              showSuccessToast("Aktivitas berhasil dihapus");
             } catch (error) {
               console.error("Error deleting activities:", error);
               alert("Gagal menghapus aktivitas. Silakan coba lagi.");
@@ -950,14 +960,24 @@
       async function removeActivity(activityId) {
         if (confirm("Apakah Anda yakin ingin menghapus aktivitas ini?")) {
           try {
-            const { error } = await supabase
+            // First, delete associated reminder
+            const { error: reminderError } = await supabase
+              .from("reminders")
+              .delete()
+              .eq("exercise_log_id", activityId);
+
+            if (reminderError) throw reminderError;
+
+            // Then delete the exercise log
+            const { error: exerciseError } = await supabase
               .from("exercise_logs")
               .delete()
               .eq("id", activityId);
 
-            if (error) throw error;
+            if (exerciseError) throw exerciseError;
 
             await loadActivities();
+            showSuccessToast("Aktivitas berhasil dihapus");
           } catch (error) {
             console.error("Error removing activity:", error);
             alert("Gagal menghapus aktivitas. Silakan coba lagi.");
@@ -994,6 +1014,37 @@
           month: "short",
           hour: "2-digit",
           minute: "2-digit",
+        });
+      }
+
+      // Tambahkan fungsi showSuccessToast
+      function showSuccessToast(message) {
+        const toast = document.createElement("div");
+        toast.className = 
+          "toast align-items-center border-0 position-fixed top-0 start-50 translate-middle-x mt-3";
+        toast.style.cssText = `
+          z-index: 1050;
+          background-color: rgba(180, 230, 176, 0.95);
+          backdrop-filter: blur(8px);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          border-radius: 1rem;
+          animation: slideDown 0.3s ease-out;
+        `;
+        toast.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body text-dark">
+              ${message} <i class="bi bi-check-circle-fill ms-2 text-success"></i>
+            </div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+
+        toast.addEventListener("hidden.bs.toast", () => {
+          document.body.removeChild(toast);
         });
       }
 
