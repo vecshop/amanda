@@ -186,6 +186,56 @@
         color: white !important;
       }
 
+      .reminder-item {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .reminder-item:hover {
+        transform: translateX(5px);
+        border-color: var(--primary-color);
+      }
+
+      .reminder-item .form-control {
+        max-width: 120px;
+      }
+
+      .reminder-item .btn-link {
+        padding: 0.25rem;
+        font-size: 1.1rem;
+      }
+
+      .reminder-item .btn-link:hover {
+        transform: scale(1.1);
+      }
+
+      .modal-header {
+        border-bottom: none;
+      }
+
+      .modal-body {
+        padding: 1rem 1rem 1rem;
+      }
+
+      .reminders-list {
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+
+      .reminders-list::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .reminders-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+
+      .reminders-list::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 3px;
+      }
+
       .activity-select-container {
         position: relative;
       }
@@ -725,6 +775,58 @@
       .navbar .d-flex {
         gap: 0.5rem;
       }
+
+      @keyframes slideDown {
+        from {
+          transform: translate(-50%, -100%);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+        to {
+          transform: translate(-50%, -100%);
+          opacity: 0;
+        }
+      }
+
+      .toast {
+        --bs-toast-padding-x: 1rem;
+        --bs-toast-padding-y: 0.75rem;
+        min-width: 280px;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .toast .toast-body {
+        font-weight: 500;
+        color: #2d3436 !important;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .toast .btn-close {
+        opacity: 0.5;
+        transition: opacity 0.2s ease;
+      }
+
+      .toast .btn-close:hover {
+        opacity: 0.75;
+      }
+
+      .btn-close-white {
+        filter: brightness(0) invert(1);
+      }
     </style>
   </head>
   <body>
@@ -830,10 +932,9 @@
         </div>
         <button
           class="btn btn-link text-primary position-absolute bottom-0 end-0 p-3"
-          data-bs-toggle="modal"
-          data-bs-target="#reminderModal"
+          id="editRemindersBtn"
         >
-          <i class="bi bi-plus"></i> Tambah
+          <i class="bi bi-pencil-square"></i> Edit
         </button>
       </div>
 
@@ -993,6 +1094,45 @@
                 <i class="bi bi-bell me-2"></i>
                 Atur Pengingat
               </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add this new modal after the existing reminderModal -->
+    <!-- Replace the existing editReminderModal in index.html -->
+    <div
+      class="modal fade"
+      id="editReminderModal"
+      tabindex="-1"
+      aria-labelledby="editReminderModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editReminderModalLabel">
+              Edit Pengingat
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="editReminderForm">
+              <!-- List of reminders -->
+              <div class="reminders-list mb-3">
+                <!-- Reminders will be populated here -->
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-amanda">
+                  <i class="bi bi-save"></i> Simpan Perubahan
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -1266,8 +1406,14 @@
         }
       }
 
-      function findMatchingIcon(activityName) {
-        const lowerActivity = activityName.toLowerCase();
+      // Update fungsi findMatchingIcon untuk menggunakan exercise_type dari exercise_logs
+      function findMatchingIcon(activityType) {
+        // Handle undefined atau null
+        if (!activityType) {
+          return "bi-activity"; // Default icon
+        }
+
+        const lowerActivity = activityType.toLowerCase();
 
         for (const category of Object.values(activityIcons)) {
           for (const item of category) {
@@ -1305,14 +1451,14 @@
             .from("reminders")
             .select(
               `
-                id,
-                scheduled_at,
-                is_active,
-                exercise_log_id,
-                exercise_logs!inner (
-                    exercise_type
-                )
-            `
+    id,
+    scheduled_at,
+    is_active,
+    repeat_pattern,
+    exercise_logs (
+      exercise_type
+    )
+  `
             )
             .eq("user_id", user.id)
             .order("scheduled_at", { ascending: true });
@@ -1371,36 +1517,42 @@
             carouselItem.innerHTML = group
               .map(
                 (reminder) => `
-                <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi ${findMatchingIcon(
-                              reminder.exercise_logs.exercise_type
-                            )} text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">${
-                              reminder.exercise_logs.exercise_type
-                            }</h6>
-                            <small class="text-muted">
-                                ${new Date(
-                                  reminder.scheduled_at
-                                ).toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                            </small>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <div class="form-check form-switch me-2">
-                            <input type="checkbox" class="form-check-input reminder-toggle"
-                                   data-reminder-id="${reminder.id}"
-                                   ${reminder.is_active ? "checked" : ""}>
-                        </div>
-                    </div>
-                </div>
-            `
+    <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+      <div class="d-flex align-items-center">
+        <div class="bg-light rounded-circle p-2 me-3">
+          <i class="bi ${findMatchingIcon(
+            reminder.exercise_logs?.exercise_type
+          )} fs-4"></i>
+        </div>
+        <div>
+          <h6 class="mb-0">${
+            reminder.exercise_logs?.exercise_type ||
+            reminder.title ||
+            "Aktivitas"
+          }</h6>
+          <small class="text-muted">
+            ${
+              reminder.time_remind
+                ? reminder.time_remind.substring(0, 5)
+                : "Waktu tidak diatur"
+            }
+            ${
+              reminder.repeat_pattern !== "none"
+                ? ` · ${reminder.repeat_pattern}`
+                : ""
+            }
+          </small>
+        </div>
+      </div>
+      <div class="form-check form-switch">
+        <input class="form-check-input reminder-toggle" 
+               type="checkbox"
+               data-id="${reminder.id}"
+               ${reminder.is_active ? "checked" : ""}
+        >
+      </div>
+    </div>
+  `
               )
               .join("");
             carouselInner.appendChild(carouselItem);
@@ -1431,19 +1583,44 @@
               const isActive = e.target.checked;
 
               try {
+                if (!reminderId) {
+                  throw new Error("Reminder ID tidak ditemukan");
+                }
+
                 // Update reminder status
-                const { data, error } = await supabase
+                const { error: updateError } = await supabase
                   .from("reminders")
                   .update({ is_active: isActive })
+                  .eq("id", reminderId);
+
+                if (updateError) throw updateError;
+
+                // Fetch updated reminder data
+                const { data: reminderData, error: fetchError } = await supabase
+                  .from("reminders")
+                  .select(
+                    `
+                    *,
+                    exercise_logs (
+                      exercise_type
+                    )
+                  `
+                  )
                   .eq("id", reminderId)
-                  .select()
                   .single();
 
-                if (error) throw error;
+                if (fetchError) throw fetchError;
 
-                // Send notification if reminder is activated
-                if (isActive && data) {
-                  await sendReminderNotification(data);
+                if (isActive && reminderData) {
+                  // Show success toast
+                  showSuccessToast(
+                    `Pengingat ${
+                      reminderData.exercise_logs?.exercise_type || "aktivitas"
+                    } diaktifkan`
+                  );
+
+                  // Schedule notification
+                  scheduleNotification(reminderData);
                 }
               } catch (error) {
                 console.error("Error toggling reminder:", error);
@@ -1611,12 +1788,13 @@
               {
                 user_id: user.id,
                 exercise_log_id: activityId,
-                title: `Pengingat: ${activity.exercise_type}`, // Add title
-                description: `Waktunya untuk ${activity.exercise_type}`, // Optional description
-                scheduled_at: scheduledAt.toISOString(),
+                title: `Pengingat: ${activity.exercise_type}`,
+                description: `Waktunya untuk ${activity.exercise_type}`,
+                scheduled_at: new Date().toISOString(),
+                time_remind: `${reminderTime}:00`,
                 is_active: true,
                 reminder_type: "exercise",
-                repeat_pattern: "none", // Add repeat_pattern as required in schema
+                repeat_pattern: "none",
               },
             ]);
 
@@ -1885,6 +2063,7 @@
           await Promise.all([loadAIRecommendations(user.id), loadReminders()]);
 
           initializeReminderModal();
+          initializeReminderEdit(); // Add this line
         } catch (error) {
           console.error("Error initializing app:", error);
         }
@@ -1930,7 +2109,6 @@
             if (!reminderItem.querySelector(".achievement-badge")) {
               const badge = document.createElement("div");
               badge.className = "achievement-badge";
-              badge.innerHTML = "+5";
               reminderItem.style.position = "relative";
               reminderItem.appendChild(badge);
             }
@@ -1980,12 +2158,18 @@
           const { data, error } = await supabase
             .from("motivation_quotes")
             .select("*")
-            .order("RANDOM()")
-            .limit(1)
-            .single();
+            .order("created_at", { ascending: false }) // Ganti RANDOM() dengan cara lain
+            .limit(10); // Ambil 10 quotes terlebih dahulu
 
           if (error) throw error;
-          return data;
+
+          // Lakukan random di sisi client
+          if (data && data.length > 0) {
+            const randomIndex = Math.floor(Math.random() * data.length);
+            return data[randomIndex];
+          }
+
+          return null;
         } catch (error) {
           console.error("Error fetching quote:", error);
           return null;
@@ -1995,7 +2179,7 @@
       async function sendReminderNotification(reminder) {
         try {
           if (!("Notification" in window)) {
-            console.log("This browser does not support notifications");
+            console.log("Browser ini tidak mendukung notifikasi");
             return;
           }
 
@@ -2006,13 +2190,18 @@
           const quoteText = quote
             ? `\n\n"${quote.quote}"\n- ${quote.author}`
             : "";
+          const reminderTitle =
+            reminder.exercise_logs?.exercise_type ||
+            reminder.title ||
+            "Aktivitas";
 
           const notification = new Notification("INGAT RUTINITASMU!", {
-            body: `${reminder.title}${quoteText}`,
+            body: `Waktunya ${reminderTitle}${quoteText}`,
             icon: "/icons/logo256.ico",
             badge: "/icons/logo64.ico",
             vibrate: [200, 100, 200],
             requireInteraction: true,
+            silent: false,
           });
 
           notification.onclick = () => {
@@ -2022,6 +2211,235 @@
         } catch (error) {
           console.error("Error sending notification:", error);
         }
+      }
+
+      // Tambahkan fungsi ini di dalam <script type="module">
+      function showSuccessToast(message) {
+        // Create toast element
+        const toast = document.createElement("div");
+        toast.className =
+          "toast align-items-center border-0 position-fixed top-0 start-50 translate-middle-x mt-3";
+        toast.style.cssText = `
+    z-index: 1050;
+    background-color: rgba(180, 230, 176, 0.95); /* Pastel green with transparency */
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+    animation: slideDown 0.3s ease-out;
+  `;
+        toast.setAttribute("role", "alert");
+        toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body text-dark">
+        ${message} <i class="bi bi-check-circle-fill ms-2 text-success"></i>
+      </div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+        document.body.appendChild(toast);
+
+        // Initialize and show toast
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+
+        // Remove toast after it's hidden
+        toast.addEventListener("hidden.bs.toast", () => {
+          toast.style.animation = "slideUp 0.3s ease-out";
+          setTimeout(() => {
+            document.body.removeChild(toast);
+          }, 300);
+        });
+      }
+
+      // Tambahkan fungsi ini di dalam <script type="module">
+      function scheduleNotification(reminder) {
+        try {
+          const now = new Date();
+          const timeRemind = reminder.time_remind;
+
+          if (!timeRemind) return;
+
+          // Parse time_remind (format "HH:mm:ss")
+          const [hours, minutes] = timeRemind.split(":");
+
+          // Set next notification time
+          let scheduledTime = new Date();
+          scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+          // If time already passed today, schedule for tomorrow
+          if (scheduledTime < now) {
+            scheduledTime.setDate(scheduledTime.getDate() + 1);
+          }
+
+          const timeUntilNotification = scheduledTime.getTime() - now.getTime();
+
+          setTimeout(async () => {
+            try {
+              // Check if reminder is still active before sending notification
+              const { data, error } = await supabase
+                .from("reminders")
+                .select("is_active")
+                .eq("id", reminder.id)
+                .single();
+
+              if (error) throw error;
+
+              if (data && data.is_active) {
+                await sendReminderNotification(reminder);
+
+                // Reschedule for next day if reminder is still active
+                scheduleNotification(reminder);
+              }
+            } catch (error) {
+              console.error("Error checking reminder status:", error);
+            }
+          }, timeUntilNotification);
+        } catch (error) {
+          console.error("Error scheduling notification:", error);
+        }
+      }
+
+      // Add this to your existing script section
+      function initializeReminderEdit() {
+        const editModal = new bootstrap.Modal(
+          document.getElementById("editReminderModal")
+        );
+        const editForm = document.getElementById("editReminderForm");
+        const remindersList = document.querySelector(
+          "#editReminderForm .reminders-list"
+        );
+
+        // Edit button click handler
+        document
+          .getElementById("editRemindersBtn")
+          .addEventListener("click", async () => {
+            try {
+              const {
+                data: { user },
+              } = await auth.getUser();
+              if (!user) throw new Error("User not authenticated");
+
+              // Fetch all reminders
+              const { data: reminders, error } = await supabase
+                .from("reminders")
+                .select(
+                  `
+          id,
+          time_remind,
+          is_active,
+          exercise_logs (
+            exercise_type
+          )
+        `
+                )
+                .eq("user_id", user.id)
+                .order("time_remind", { ascending: true });
+
+              if (error) throw error;
+
+              // Populate reminders list
+              remindersList.innerHTML = reminders
+                .map(
+                  (reminder) => `
+        <div class="reminder-item d-flex align-items-center justify-content-between mb-3 p-3 bg-light rounded">
+          <div class="d-flex align-items-center flex-grow-1 me-3">
+            <i class="bi ${findMatchingIcon(
+              reminder.exercise_logs?.exercise_type
+            )} fs-4 me-3"></i>
+            <div>
+              <div class="fw-medium">${
+                reminder.exercise_logs?.exercise_type || "Aktivitas"
+              }</div>
+              <input 
+                type="time" 
+                class="form-control form-control-sm mt-1" 
+                value="${
+                  reminder.time_remind
+                    ? reminder.time_remind.substring(0, 5)
+                    : "00:00"
+                }"
+                data-reminder-id="${reminder.id}"
+              >
+            </div>
+          </div>
+          <button type="button" class="btn btn-link text-danger delete-reminder" data-reminder-id="${
+            reminder.id
+          }">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `
+                )
+                .join("");
+
+              // Add delete handlers
+              remindersList
+                .querySelectorAll(".delete-reminder")
+                .forEach((button) => {
+                  button.addEventListener("click", async (e) => {
+                    e.preventDefault();
+                    if (!confirm("Anda yakin ingin menghapus pengingat ini?"))
+                      return;
+
+                    const reminderId = button.dataset.reminderId;
+                    try {
+                      const { error } = await supabase
+                        .from("reminders")
+                        .delete()
+                        .eq("id", reminderId);
+
+                      if (error) throw error;
+
+                      // Remove item from list
+                      button.closest(".reminder-item").remove();
+                      showSuccessToast("Pengingat berhasil dihapus");
+                    } catch (error) {
+                      console.error("Error deleting reminder:", error);
+                      alert("Gagal menghapus pengingat");
+                    }
+                  });
+                });
+
+              editModal.show();
+            } catch (error) {
+              console.error("Error loading reminders:", error);
+              alert("Gagal memuat daftar pengingat");
+            }
+          });
+
+        // Form submission handler
+        editForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          try {
+            const updates = Array.from(
+              remindersList.querySelectorAll('input[type="time"]')
+            ).map((input) => ({
+              id: input.dataset.reminderId,
+              time_remind: `${input.value}:00`,
+            }));
+
+            // Update reminders one by one
+            for (const update of updates) {
+              const { error } = await supabase
+                .from("reminders")
+                .update({
+                  time_remind: update.time_remind,
+                  scheduled_at: new Date().toISOString(),
+                })
+                .eq("id", update.id);
+
+              if (error) throw error;
+            }
+
+            editModal.hide();
+            showSuccessToast("Pengingat berhasil diperbarui");
+            await loadReminders(); // Reload main reminders display
+          } catch (error) {
+            console.error("Error updating reminders:", error);
+            alert("Gagal memperbarui pengingat");
+          }
+        });
       }
     </script>
   </body>
